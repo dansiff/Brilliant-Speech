@@ -725,7 +725,7 @@ export const LanguageModules: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center justify-center p-1 bg-white border border-slate-100 rounded-2xl max-w-md mx-auto shadow-sm">
+      <div className="grid grid-cols-2 sm:flex items-center justify-center p-1 bg-white border border-slate-100 rounded-2xl max-w-md mx-auto shadow-sm">
         {[
           { id: 'sequencing', label: 'Sequencing', emoji: '🎬' },
           { id: 'sorting', label: 'Sorting', emoji: '🍎' },
@@ -738,7 +738,7 @@ export const LanguageModules: React.FC = () => {
               setActiveModule(tab.id as any);
               playLanguageSound('pop');
             }}
-            className={`flex-1 py-2 px-3 rounded-xl font-black text-xs transition-all text-center flex items-center justify-center gap-1 ${activeModule === tab.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+            className={`min-w-0 py-2 px-2 sm:px-3 rounded-xl font-black text-xs transition-all text-center flex items-center justify-center gap-1 ${activeModule === tab.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             <span>{tab.emoji}</span>
             <span>{tab.label}</span>

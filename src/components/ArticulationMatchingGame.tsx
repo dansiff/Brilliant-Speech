@@ -218,10 +218,10 @@ export const ArticulationMatchingGame: React.FC<ArticulationMatchingGameProps> =
             Back to Practice
           </button>
           
-          <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex w-full md:w-auto flex-wrap items-center justify-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
             <button
               onClick={() => setGameMode('words')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
                 gameMode === 'words' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
@@ -230,7 +230,7 @@ export const ArticulationMatchingGame: React.FC<ArticulationMatchingGameProps> =
             </button>
             <button
               onClick={() => setGameMode('mixed')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
                 gameMode === 'mixed' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
@@ -239,7 +239,7 @@ export const ArticulationMatchingGame: React.FC<ArticulationMatchingGameProps> =
             </button>
             <button
               onClick={() => setGameMode('symbols')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
                 gameMode === 'symbols' ? 'bg-primary text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
               }`}
             >
@@ -272,6 +272,16 @@ export const ArticulationMatchingGame: React.FC<ArticulationMatchingGameProps> =
             <motion.div
               key={card.id}
               onClick={() => handleCardClick(index)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleCardClick(index);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={card.isMatched ? `Matched ${card.content}` : card.isFlipped ? `Card: ${card.content}` : `Memory card ${index + 1}`}
+              aria-pressed={card.isFlipped || card.isMatched}
               className="relative aspect-square cursor-pointer"
               whileHover={sensoryProfile?.reducedMotion ? {} : { scale: 1.02 }}
               whileTap={sensoryProfile?.reducedMotion ? {} : { scale: 0.98 }}

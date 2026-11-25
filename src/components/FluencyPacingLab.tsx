@@ -244,10 +244,10 @@ export const FluencyPacingLab: React.FC = () => {
       </div>
 
       {/* Main Navigation Tabs */}
-      <div className="flex items-center gap-3 border-b border-slate-200 pb-2">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 border-b border-slate-200 pb-2">
         <button
           onClick={() => setActiveTab('pacing_board')}
-          className={`px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
+          className={`w-full sm:w-auto justify-start px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
             activeTab === 'pacing_board'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
@@ -259,7 +259,7 @@ export const FluencyPacingLab: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('slow_smooth_race')}
-          className={`px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
+          className={`w-full sm:w-auto justify-start px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
             activeTab === 'slow_smooth_race'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
@@ -271,7 +271,7 @@ export const FluencyPacingLab: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('timed_storytelling')}
-          className={`px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
+          className={`w-full sm:w-auto justify-start px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
             activeTab === 'timed_storytelling'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'

@@ -7,7 +7,7 @@
 
 export const LAYOUT_CONFIG = {
   // Main Container Spacing
-  containerPadding: 'p-6',
+  containerPadding: 'p-4 sm:p-6',
   maxContainerWidth: 'max-w-7xl',
   
   // Sidebar (Exercise List)

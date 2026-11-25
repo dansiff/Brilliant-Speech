@@ -66,10 +66,10 @@ export const SensoryTools: React.FC<SensoryToolsProps> = ({
 
   return (
     <div className={`p-6 ${styles.card} max-w-4xl mx-auto mt-8`}>
-      <div className="flex gap-4 mb-8 border-b border-slate-100 pb-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-8 border-b border-slate-100 pb-4">
         <button
           onClick={() => setActiveTab('timer')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+          className={`w-full sm:w-auto flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
             activeTab === 'timer' ? styles.button + ' text-white' : 'text-slate-500 hover:bg-slate-50'
           }`}
         >
@@ -78,7 +78,7 @@ export const SensoryTools: React.FC<SensoryToolsProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('boards')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+          className={`w-full sm:w-auto flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
             activeTab === 'boards' ? styles.button + ' text-white' : 'text-slate-500 hover:bg-slate-50'
           }`}
         >
@@ -87,7 +87,7 @@ export const SensoryTools: React.FC<SensoryToolsProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('settings')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+          className={`w-full sm:w-auto flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
             activeTab === 'settings' ? styles.button + ' text-white' : 'text-slate-500 hover:bg-slate-50'
           }`}
         >

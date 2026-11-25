@@ -146,10 +146,10 @@ export const SceneAacBoards: React.FC = () => {
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-3 border-b border-slate-200 pb-2">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 border-b border-slate-200 pb-2">
         <button
           onClick={() => setActiveTab('visual_scenes')}
-          className={`px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
+          className={`w-full sm:w-auto justify-start px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
             activeTab === 'visual_scenes'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
@@ -161,7 +161,7 @@ export const SceneAacBoards: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('sentence_builder')}
-          className={`px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
+          className={`w-full sm:w-auto justify-start px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
             activeTab === 'sentence_builder'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
@@ -173,7 +173,7 @@ export const SceneAacBoards: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('request_reward')}
-          className={`px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
+          className={`w-full sm:w-auto justify-start px-3 sm:px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
             activeTab === 'request_reward'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
