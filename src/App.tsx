@@ -102,7 +102,7 @@ import { extractJsonFromResponse } from './utils/aiUtils';
 import { LAYOUT_CONFIG } from './layoutConfig';
 import { useOnlineStatus } from './utils/useOnlineStatus';
 
-import { ExerciseIllustration } from './components/ExerciseIllustration';
+import { ExerciseIllustration, ExerciseImage } from './components/ExerciseIllustration';
 import { VisualBuilder } from './components/admin/VisualBuilder';
 import { AdminCMS } from './components/AdminCMS';
 import { privacyGovernanceService } from './services/privacyGovernanceService';
@@ -197,45 +197,6 @@ const LoadingSpinner = () => (
 const ProgressCharts = lazy(() =>
   import('./components/ProgressCharts').then(({ ProgressCharts }) => ({ default: ProgressCharts }))
 );
-
-interface ImageWithExerciseFallbackProps {
-  imageUrl?: string;
-  word: string;
-  className: string;
-  illustrationClassName?: string;
-}
-
-function ImageWithExerciseFallback({
-  imageUrl,
-  word,
-  className,
-  illustrationClassName,
-}: ImageWithExerciseFallbackProps) {
-  const [imageError, setImageError] = useState(false);
-
-  if (!imageUrl || imageUrl.includes('picsum.photos') || imageError) {
-    return (
-      <ExerciseIllustration
-        word={word}
-        className={className}
-        illustrationClassName={illustrationClassName}
-      />
-    );
-  }
-
-  return (
-    <img
-      src={imageUrl}
-      alt={word}
-      className={className}
-      referrerPolicy="no-referrer"
-      onError={() => {
-        setImageError(true);
-        toast.info('Illustration unavailable; using built-in art instead.');
-      }}
-    />
-  );
-}
 
 import { requestWakeLock } from './utils/nativeBridge';
 
@@ -4678,7 +4639,7 @@ export default function App() {
                                   className={`p-8 rounded-[40px] border-4 border-slate-100 shadow-xl bg-white cursor-grab active:cursor-grabbing touch-none`}
                                 >
                                   <div className="aspect-video rounded-2xl overflow-hidden mb-6 border-2 border-slate-50">
-                                    <ImageWithExerciseFallback
+                                    <ExerciseImage
                                       key={`${selectedExercise.id}-${currentStoryPage}`}
                                       imageUrl={selectedExercise.story![currentStoryPage].imageUrl}
                                       word={selectedExercise.story![currentStoryPage].interactiveWords?.[0]?.word || selectedExercise.targetWord || selectedExercise.title}
@@ -5435,7 +5396,7 @@ export default function App() {
                                 className={`p-6 ${styles.card} relative group`}
                               >
                                 <div className="flex items-start gap-4">
-                                  <ImageWithExerciseFallback
+                                  <ExerciseImage
                                     imageUrl={word.imageUrl}
                                     word={word.word}
                                     className="w-16 h-16 shrink-0 rounded-xl object-cover shadow-md"

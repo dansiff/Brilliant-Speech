@@ -25,7 +25,7 @@ import {
 import { Exercise, ExerciseType, Language, Difficulty } from '../types';
 import { PronunciationVisualizer } from './PronunciationVisualizer';
 import { SpeechPipelineFeedback } from './SpeechPipelineFeedback';
-import { FALLBACK_IMAGE } from '../constants';
+import { ExerciseImage } from './ExerciseIllustration';
 import { speakText } from '../utils/speechUtils';
 
 type DrillPosition = 'Initial' | 'Medial' | 'Final';
@@ -547,20 +547,20 @@ export const SpecializedExerciseView: React.FC<SpecializedExerciseViewProps> = (
         <AnimatePresence>
           <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
             {exercise.imageUrl && (!isActive || exercise.type === ExerciseType.STORY) && (
-              <motion.img 
+              <motion.div
                 key="base-img"
                 initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                animate={{ opacity: 0.4, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
-                src={exercise.imageUrl || FALLBACK_IMAGE} 
-                alt={exercise.title}
-                className="absolute inset-0 w-full h-full object-cover rounded-[40px] opacity-40 blur-[2px]"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = FALLBACK_IMAGE;
-                }}
-              />
+                className="absolute inset-0 w-full h-full overflow-hidden rounded-[40px] blur-[2px]"
+              >
+                <ExerciseImage
+                  imageUrl={exercise.imageUrl}
+                  word={exercise.targetWord || exercise.title}
+                  className="w-full h-full object-cover"
+                  illustrationClassName="text-[12rem]"
+                />
+              </motion.div>
             )}
 
             {/* Overlay components for specific exercise types */}
