@@ -24,7 +24,10 @@ import {
   Eye,
   CheckCircle2,
   ChevronRight,
-  Bookmark
+  Bookmark,
+  MessageCircle,
+  BookOpen,
+  Lightbulb
 } from 'lucide-react';
 import { speakText } from '../utils/speechUtils';
 import { Language } from '../types';
@@ -148,6 +151,163 @@ interface PracticeStats {
     points: number;
   }>;
 }
+
+type ExpressiveActivityId = 'naming' | 'description' | 'retell' | 'retrieval' | 'sentence' | 'grammar' | 'open';
+
+interface ExpressivePrompt {
+  emoji: string;
+  prompt: string;
+  cue: string;
+  example: string;
+  wordBank?: string[];
+  choices?: string[];
+  correctChoice?: string;
+}
+
+const EXPRESSIVE_ACTIVITIES: Array<{
+  id: ExpressiveActivityId;
+  title: string;
+  description: string;
+  prompts: ExpressivePrompt[];
+}> = [
+  {
+    id: 'naming',
+    title: 'Object naming',
+    description: 'Name a pictured object, then compare your response with a word cue.',
+    prompts: [
+      { emoji: '🪥', prompt: 'What is this?', cue: 'Name the object and tell what it is used for.', example: 'Toothbrush — we use it to brush our teeth.' },
+      { emoji: '🦒', prompt: 'What is this?', cue: 'Name the animal and share one thing you know about it.', example: 'Giraffe — it has a long neck.' },
+      { emoji: '⏰', prompt: 'What is this?', cue: 'Name the object and describe when you might use it.', example: 'Clock — it helps us know the time.' }
+    ]
+  },
+  {
+    id: 'description',
+    title: 'Picture description',
+    description: 'Describe a scene using details about who, what, where, and how.',
+    prompts: [
+      { emoji: '🐕🏖️', prompt: 'Tell about this picture.', cue: 'Who is there? What are they doing? Where are they?', example: 'A dog is running on the beach. It looks excited.' },
+      { emoji: '👧🏻🎨🖼️', prompt: 'Describe what you see.', cue: 'Include the person, the action, and a detail about the scene.', example: 'A girl is painting a colorful picture.' },
+      { emoji: '🌧️☂️👦', prompt: 'What might be happening here?', cue: 'Describe the weather, the person, and what they are doing.', example: 'A boy is walking in the rain and holding an umbrella.' }
+    ]
+  },
+  {
+    id: 'retell',
+    title: 'Story retelling',
+    description: 'Retell a short event with a beginning, middle, and end.',
+    prompts: [
+      { emoji: '🌰➡️🌱➡️🌻', prompt: 'Retell how a seed becomes a flower.', cue: 'Use first, next, and finally.', example: 'First, we plant a seed. Next, we water it and give it sunlight. Finally, a flower grows.' },
+      { emoji: '🧼➡️🫧➡️🚰➡️👐', prompt: 'Retell the hand-washing steps.', cue: 'Include the important actions in order.', example: 'First wet your hands and add soap. Scrub, rinse, and dry them.' },
+      { emoji: '🍞➡️🍓➡️🥪➡️😋', prompt: 'Retell how someone makes and eats a sandwich.', cue: 'Tell what happens at the beginning, middle, and end.', example: 'First put jam on bread. Then put the slices together. Finally, take a bite.' }
+    ]
+  },
+  {
+    id: 'retrieval',
+    title: 'Word retrieval',
+    description: 'Think of a word from clues and try another if you get stuck.',
+    prompts: [
+      { emoji: '🔎', prompt: 'What word fits these clues?', cue: 'It is a place. You can borrow books and read quietly there.', example: 'Library' },
+      { emoji: '🔎', prompt: 'What word fits these clues?', cue: 'It is a fruit. It is yellow, long, and has a peel.', example: 'Banana' },
+      { emoji: '🔎', prompt: 'What word fits these clues?', cue: 'This person teaches students in a classroom.', example: 'Teacher' }
+    ]
+  },
+  {
+    id: 'sentence',
+    title: 'Sentence building',
+    description: 'Tap word tiles to make a complete sentence.',
+    prompts: [
+      { emoji: '🐈🥛', prompt: 'Build a sentence about the picture.', cue: 'Choose the words, then read the sentence aloud.', example: 'The cat is drinking milk.', wordBank: ['The', 'cat', 'is', 'drinking', 'milk.', 'blue'] },
+      { emoji: '👦⚽', prompt: 'Build a sentence about the picture.', cue: 'Choose words in an order that makes sense.', example: 'The boy kicks the ball.', wordBank: ['The', 'boy', 'kicks', 'the', 'ball.', 'sleeping'] },
+      { emoji: '🐦🌳', prompt: 'Build a sentence about the picture.', cue: 'Make a sentence that tells who and what they are doing.', example: 'A bird sits in the tree.', wordBank: ['A', 'bird', 'sits', 'in', 'the', 'tree.', 'runs'] }
+    ]
+  },
+  {
+    id: 'grammar',
+    title: 'Grammar & verb tense',
+    description: 'Choose the sentence that matches the time clue.',
+    prompts: [
+      { emoji: '📅', prompt: 'Yesterday, Maya ___ to the park.', cue: 'Choose the verb that tells about the past.', example: 'Yesterday, Maya walked to the park.', choices: ['walk', 'walked', 'walking'], correctChoice: 'walked' },
+      { emoji: '📅', prompt: 'Right now, the dog ___ in the yard.', cue: 'Choose the verb for an action happening now.', example: 'Right now, the dog is running in the yard.', choices: ['ran', 'is running', 'will run'], correctChoice: 'is running' },
+      { emoji: '📅', prompt: 'Tomorrow, we ___ our friend.', cue: 'Choose the verb that tells about the future.', example: 'Tomorrow, we will visit our friend.', choices: ['visited', 'visit yesterday', 'will visit'], correctChoice: 'will visit' }
+    ]
+  },
+  {
+    id: 'open',
+    title: 'Open-ended questions',
+    description: 'Share your own idea; there can be many good answers.',
+    prompts: [
+      { emoji: '💭', prompt: 'What would you bring on a picnic, and why?', cue: 'Give an idea and add a reason.', example: 'I would bring apples because they are a tasty snack.' },
+      { emoji: '💭', prompt: 'What could you do if a friend felt left out?', cue: 'Think of a kind action and explain it.', example: 'I could invite my friend to play with us.' },
+      { emoji: '💭', prompt: 'If you could visit any place, where would you go?', cue: 'Tell where you would go and what you might do there.', example: 'I would visit the ocean to see the waves.' }
+    ]
+  }
+];
+
+type LiteracyMode = 'rhyming' | 'syllables' | 'phonemes' | 'letters' | 'initial' | 'fluency';
+
+interface LiteracyPrompt {
+  prompt: string;
+  stimulus: string;
+  choices?: string[];
+  answer?: string;
+  explanation: string;
+}
+
+const LITERACY_ACTIVITIES: Record<LiteracyMode, { title: string; description: string; prompts: LiteracyPrompt[] }> = {
+  rhyming: {
+    title: 'Rhyming words',
+    description: 'Listen for words that share an ending sound.',
+    prompts: [
+      { prompt: 'Which word rhymes with “cat”?', stimulus: 'cat', choices: ['sun', 'hat', 'cup'], answer: 'hat', explanation: 'Cat and hat end with the same sound: /at/.' },
+      { prompt: 'Which word rhymes with “cake”?', stimulus: 'cake', choices: ['lake', 'sock', 'book'], answer: 'lake', explanation: 'Cake and lake share the ending sound /ake/.' },
+      { prompt: 'Which word rhymes with “boat”?', stimulus: 'boat', choices: ['goat', 'bed', 'fish'], answer: 'goat', explanation: 'Boat and goat share the ending sound /oat/.' }
+    ]
+  },
+  syllables: {
+    title: 'Syllable awareness',
+    description: 'Count the beats in a word and tap or say each syllable.',
+    prompts: [
+      { prompt: 'How many syllables do you hear?', stimulus: 'rainbow', choices: ['1', '2', '3'], answer: '2', explanation: 'Rain-bow has two spoken beats.' },
+      { prompt: 'How many syllables do you hear?', stimulus: 'banana', choices: ['2', '3', '4'], answer: '3', explanation: 'Ba-na-na has three spoken beats.' },
+      { prompt: 'How many syllables do you hear?', stimulus: 'butterfly', choices: ['2', '3', '4'], answer: '3', explanation: 'But-ter-fly has three spoken beats.' }
+    ]
+  },
+  phonemes: {
+    title: 'Sound segmentation & blending',
+    description: 'Notice individual speech sounds, then blend sounds into a word.',
+    prompts: [
+      { prompt: 'Blend these sounds: /s/ – /u/ – /n/.', stimulus: ' /s/  /u/  /n/ ', choices: ['sun', 'sock', 'sit'], answer: 'sun', explanation: 'Putting /s/, /u/, and /n/ together makes sun.' },
+      { prompt: 'Which set of sounds makes “map”?', stimulus: 'map', choices: ['/m/ – /a/ – /p/', '/m/ – /o/ – /p/', '/s/ – /a/ – /p/'], answer: '/m/ – /a/ – /p/', explanation: 'Map can be stretched into /m/, /a/, /p/.' },
+      { prompt: 'Blend these sounds: /f/ – /i/ – /sh/.', stimulus: ' /f/  /i/  /sh/ ', choices: ['fish', 'fit', 'fin'], answer: 'fish', explanation: 'Blending /f/, /i/, and /sh/ makes fish.' }
+    ]
+  },
+  letters: {
+    title: 'Sound–letter links',
+    description: 'Connect a speech sound with the letter or letters that spell it.',
+    prompts: [
+      { prompt: 'Which letter starts the word “moon”?', stimulus: '🌙 moon', choices: ['M', 'S', 'T'], answer: 'M', explanation: 'Moon begins with the /m/ sound, spelled with M.' },
+      { prompt: 'Which letters spell the first sound in “ship”?', stimulus: '🚢 ship', choices: ['sh', 'ch', 'th'], answer: 'sh', explanation: 'The first sound in ship is spelled with the two letters sh.' },
+      { prompt: 'Which letter makes the first sound in “goat”?', stimulus: '🐐 goat', choices: ['G', 'B', 'L'], answer: 'G', explanation: 'Goat begins with /g/, spelled with G.' }
+    ]
+  },
+  initial: {
+    title: 'Initial sounds',
+    description: 'Find the word that begins with the target sound.',
+    prompts: [
+      { prompt: 'Which word begins with /b/?', stimulus: ' /b/ ', choices: ['ball', 'moon', 'fish'], answer: 'ball', explanation: 'Ball starts with the /b/ sound.' },
+      { prompt: 'Which word begins with /s/?', stimulus: ' /s/ ', choices: ['sun', 'cat', 'leaf'], answer: 'sun', explanation: 'Sun starts with the /s/ sound.' },
+      { prompt: 'Which word begins with /m/?', stimulus: ' /m/ ', choices: ['map', 'dog', 'kite'], answer: 'map', explanation: 'Map starts with the /m/ sound.' }
+    ]
+  },
+  fluency: {
+    title: 'Reading fluency',
+    description: 'Read a short passage aloud. Focus on smooth phrasing, accuracy, and expression.',
+    prompts: [
+      { prompt: 'Read aloud, pausing at the punctuation.', stimulus: 'The little bird hopped to the fence. It looked up at the bright blue sky.', explanation: 'Try reading in meaningful phrases and noticing the full stop.' },
+      { prompt: 'Read aloud like you are telling a story.', stimulus: 'Milo found a shiny shell on the beach. He carried it home to show his family.', explanation: 'Try a steady pace and make the story sound interesting.' },
+      { prompt: 'Read aloud, making the question sound like a question.', stimulus: '“Where did my red kite go?” asked Sam. It was caught in a tree!', explanation: 'Try pausing at the question mark and changing your voice for the question.' }
+    ]
+  }
+};
 
 // Sequencing content
 const SEQUENCING_SETS: SequencingSet[] = [
@@ -287,8 +447,8 @@ const WH_QUESTIONS: WhQuestionCard[] = [
 ];
 
 export const LanguageModules: React.FC = () => {
-  // Modules: 'sequencing' | 'sorting' | 'wh' | 'stats'
-  const [activeModule, setActiveModule] = useState<'sequencing' | 'sorting' | 'wh' | 'stats'>('sequencing');
+  // Modules: 'sequencing' | 'sorting' | 'wh' | 'expressive' | 'literacy' | 'stats'
+  const [activeModule, setActiveModule] = useState<'sequencing' | 'sorting' | 'wh' | 'expressive' | 'literacy' | 'stats'>('sequencing');
 
   // Stats / Progress state
   const [stats, setStats] = useState<PracticeStats>({
@@ -338,6 +498,18 @@ export const LanguageModules: React.FC = () => {
   const [selectedWhAnswer, setSelectedWhAnswer] = useState<string | null>(null);
   const [whIsCorrect, setWhIsCorrect] = useState<boolean | null>(null);
   const [whScore, setWhScore] = useState<number>(0);
+
+  const [expressiveActivityId, setExpressiveActivityId] = useState<ExpressiveActivityId>('naming');
+  const [expressivePromptIndex, setExpressivePromptIndex] = useState(0);
+  const [expressiveResponse, setExpressiveResponse] = useState('');
+  const [sentenceWords, setSentenceWords] = useState<string[]>([]);
+  const [expressiveChoice, setExpressiveChoice] = useState<string | null>(null);
+  const [showExpressiveExample, setShowExpressiveExample] = useState(false);
+
+  const [literacyMode, setLiteracyMode] = useState<LiteracyMode>('rhyming');
+  const [literacyPromptIndex, setLiteracyPromptIndex] = useState(0);
+  const [literacyChoice, setLiteracyChoice] = useState<string | null>(null);
+  const [fluencyMarked, setFluencyMarked] = useState(false);
 
   // ---------------------------------------------------------------------------
   // INITIAL LOAD
@@ -690,6 +862,48 @@ export const LanguageModules: React.FC = () => {
     }
   };
 
+  const currentExpressiveActivity = EXPRESSIVE_ACTIVITIES.find((activity) => activity.id === expressiveActivityId)!;
+  const currentExpressivePrompt = currentExpressiveActivity.prompts[expressivePromptIndex];
+  const currentLiteracyActivity = LITERACY_ACTIVITIES[literacyMode];
+  const currentLiteracyPrompt = currentLiteracyActivity.prompts[literacyPromptIndex];
+
+  const resetExpressivePrompt = () => {
+    setExpressiveResponse('');
+    setSentenceWords([]);
+    setExpressiveChoice(null);
+    setShowExpressiveExample(false);
+  };
+
+  const nextExpressivePrompt = () => {
+    resetExpressivePrompt();
+    setExpressivePromptIndex((index) => (index + 1) % currentExpressiveActivity.prompts.length);
+  };
+
+  const selectExpressiveActivity = (id: ExpressiveActivityId) => {
+    setExpressiveActivityId(id);
+    setExpressivePromptIndex(0);
+    resetExpressivePrompt();
+  };
+
+  const nextLiteracyPrompt = () => {
+    setLiteracyChoice(null);
+    setFluencyMarked(false);
+    setLiteracyPromptIndex((index) => (index + 1) % currentLiteracyActivity.prompts.length);
+  };
+
+  const selectLiteracyMode = (mode: LiteracyMode) => {
+    setLiteracyMode(mode);
+    setLiteracyPromptIndex(0);
+    setLiteracyChoice(null);
+    setFluencyMarked(false);
+  };
+
+  const chooseLiteracyAnswer = (choice: string) => {
+    if (literacyChoice !== null) return;
+    setLiteracyChoice(choice);
+    playLanguageSound(choice === currentLiteracyPrompt.answer ? 'success' : 'wrong');
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6">
       
@@ -725,17 +939,19 @@ export const LanguageModules: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="grid grid-cols-2 sm:flex items-center justify-center p-1 bg-white border border-slate-100 rounded-2xl max-w-md mx-auto shadow-sm">
-        {[
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 items-center justify-center gap-1 p-1 bg-white border border-slate-100 rounded-2xl shadow-sm">
+        {([
           { id: 'sequencing', label: 'Sequencing', emoji: '🎬' },
           { id: 'sorting', label: 'Sorting', emoji: '🍎' },
           { id: 'wh', label: 'WH-Questions', emoji: '❓' },
+          { id: 'expressive', label: 'Expressive', emoji: '💬' },
+          { id: 'literacy', label: 'Sound Play', emoji: '🔤' },
           { id: 'stats', label: 'My Progress', emoji: '📊' }
-        ].map((tab) => (
+        ] as const).map((tab) => (
           <button
             key={tab.id}
             onClick={() => {
-              setActiveModule(tab.id as any);
+              setActiveModule(tab.id);
               playLanguageSound('pop');
             }}
             className={`min-w-0 py-2 px-2 sm:px-3 rounded-xl font-black text-xs transition-all text-center flex items-center justify-center gap-1 ${activeModule === tab.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
@@ -1306,7 +1522,213 @@ export const LanguageModules: React.FC = () => {
         )}
 
         {/* =================================================================== */}
-        {/* MODULE D: STATS / DETAILED PRACTICE HISTORY */}
+        {/* MODULE D: EXPRESSIVE LANGUAGE STUDIO */}
+        {/* =================================================================== */}
+        {activeModule === 'expressive' && (
+          <motion.div
+            key="expressive-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="space-y-5"
+          >
+            <div className="rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-5 sm:p-7">
+              <div className="flex items-start gap-3">
+                <MessageCircle className="mt-1 h-6 w-6 shrink-0 text-indigo-600" />
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Expressive Language Studio</h3>
+                  <p className="mt-1 text-sm text-slate-600">Practice naming, describing, retelling, word finding, sentence building, grammar, and sharing ideas. Responses are for practice; compare them with the cue rather than treating the example as the only possible answer.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {EXPRESSIVE_ACTIVITIES.map((activity) => (
+                <button
+                  key={activity.id}
+                  onClick={() => selectExpressiveActivity(activity.id)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-extrabold transition-colors ${expressiveActivityId === activity.id ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
+                >
+                  {activity.title}
+                </button>
+              ))}
+              <button
+                onClick={() => setActiveModule('sorting')}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-extrabold text-slate-600 hover:bg-slate-50"
+              >
+                Categorization
+              </button>
+            </div>
+
+            <section className="space-y-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600">{currentExpressiveActivity.title} · Prompt {expressivePromptIndex + 1} of {currentExpressiveActivity.prompts.length}</span>
+                  <p className="mt-1 text-sm text-slate-500">{currentExpressiveActivity.description}</p>
+                </div>
+                <button
+                  onClick={() => speakText(`${currentExpressivePrompt.prompt} ${currentExpressivePrompt.cue}`, Language.ENGLISH)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-50 px-4 py-2.5 text-xs font-black text-indigo-700 hover:bg-indigo-100"
+                >
+                  <Volume2 className="h-4 w-4" /> Hear the prompt
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-5 text-center">
+                <div className="mb-3 text-5xl" aria-hidden="true">{currentExpressivePrompt.emoji}</div>
+                <h4 className="text-lg font-black text-slate-900">{currentExpressivePrompt.prompt}</h4>
+                <p className="mt-2 text-sm text-slate-600">{currentExpressivePrompt.cue}</p>
+              </div>
+
+              {expressiveActivityId === 'sentence' && currentExpressivePrompt.wordBank && (
+                <div className="space-y-3">
+                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">Tap words to build your sentence</p>
+                  <div className="flex min-h-14 flex-wrap items-center gap-2 rounded-2xl border border-dashed border-indigo-200 bg-slate-50 p-3" aria-live="polite">
+                    {sentenceWords.length ? sentenceWords.map((word, index) => <span key={`${word}-${index}`} className="rounded-lg bg-indigo-100 px-3 py-1.5 text-sm font-bold text-indigo-900">{word}</span>) : <span className="text-xs text-slate-400">Your sentence will appear here.</span>}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentExpressivePrompt.wordBank.map((word, index) => (
+                      <button key={`${word}-${index}`} onClick={() => setSentenceWords((words) => [...words, word])} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 hover:border-indigo-300 hover:bg-indigo-50">{word}</button>
+                    ))}
+                    <button onClick={() => setSentenceWords((words) => words.slice(0, -1))} disabled={!sentenceWords.length} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 disabled:opacity-40">Undo</button>
+                    <button onClick={() => setSentenceWords([])} disabled={!sentenceWords.length} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-500 disabled:opacity-40">Clear</button>
+                  </div>
+                </div>
+              )}
+
+              {expressiveActivityId === 'grammar' && currentExpressivePrompt.choices ? (
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {currentExpressivePrompt.choices.map((choice) => (
+                    <button
+                      key={choice}
+                      disabled={expressiveChoice !== null}
+                      onClick={() => setExpressiveChoice(choice)}
+                      className={`rounded-xl border p-3 text-sm font-bold transition-colors ${expressiveChoice === choice ? choice === currentExpressivePrompt.correctChoice ? 'border-emerald-400 bg-emerald-50 text-emerald-800' : 'border-rose-300 bg-rose-50 text-rose-800' : expressiveChoice !== null && choice === currentExpressivePrompt.correctChoice ? 'border-emerald-400 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300'}`}
+                    >
+                      {choice}
+                    </button>
+                  ))}
+                </div>
+              ) : expressiveActivityId !== 'sentence' && (
+                <label className="block space-y-2">
+                  <span className="text-xs font-black uppercase tracking-wide text-slate-500">Your response</span>
+                  <textarea
+                    value={expressiveResponse}
+                    onChange={(event) => setExpressiveResponse(event.target.value)}
+                    rows={expressiveActivityId === 'retell' || expressiveActivityId === 'description' || expressiveActivityId === 'open' ? 4 : 2}
+                    placeholder={expressiveActivityId === 'open' ? 'Share any idea that answers the question…' : 'Type a word or response here, or say it aloud…'}
+                    className="w-full resize-y rounded-xl border border-slate-200 p-3 text-sm text-slate-800 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </label>
+              )}
+
+              <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  onClick={() => setShowExpressiveExample((visible) => !visible)}
+                  className="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-amber-50 px-4 py-2.5 text-xs font-black text-amber-800 hover:bg-amber-100"
+                >
+                  <Lightbulb className="h-4 w-4" /> {showExpressiveExample ? 'Hide example / reflection cue' : 'Show an example'}
+                </button>
+                <button onClick={nextExpressivePrompt} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-black text-white hover:bg-slate-800">
+                  Next prompt <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+              {showExpressiveExample && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                  <p><strong>Example:</strong> {currentExpressivePrompt.example}</p>
+                  {expressiveActivityId === 'open' && <p className="mt-1 text-xs">There are many possible answers. What matters is sharing an idea and, if you can, a reason.</p>}
+                  {expressiveActivityId === 'sentence' && <p className="mt-1 text-xs">Try reading your sentence aloud. You can make a different sentence that also fits the picture.</p>}
+                  {expressiveActivityId === 'grammar' && expressiveChoice !== null && <p className="mt-1 text-xs">{expressiveChoice === currentExpressivePrompt.correctChoice ? 'That choice matches the time clue.' : 'Compare your choice with the example and time clue.'}</p>}
+                </div>
+              )}
+            </section>
+          </motion.div>
+        )}
+
+        {/* =================================================================== */}
+        {/* MODULE E: PHONOLOGICAL AWARENESS & LITERACY */}
+        {/* =================================================================== */}
+        {activeModule === 'literacy' && (
+          <motion.div
+            key="literacy-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="space-y-5"
+          >
+            <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 sm:p-7">
+              <div className="flex items-start gap-3">
+                <BookOpen className="mt-1 h-6 w-6 shrink-0 text-emerald-600" />
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Sound Play & Reading</h3>
+                  <p className="mt-1 text-sm text-slate-600">Explore rhymes, syllables, phoneme blending and segmentation, sound–letter links, initial sounds, and short read-aloud passages.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {(Object.keys(LITERACY_ACTIVITIES) as LiteracyMode[]).map((mode) => (
+                <button key={mode} onClick={() => selectLiteracyMode(mode)} className={`rounded-xl border px-2 py-2.5 text-xs font-extrabold transition-colors ${literacyMode === mode ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
+                  {LITERACY_ACTIVITIES[mode].title}
+                </button>
+              ))}
+            </div>
+
+            <section className="space-y-5 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">{currentLiteracyActivity.title} · Activity {literacyPromptIndex + 1} of {currentLiteracyActivity.prompts.length}</span>
+                  <p className="mt-1 text-sm text-slate-500">{currentLiteracyActivity.description}</p>
+                </div>
+                <button onClick={() => speakText(currentLiteracyPrompt.stimulus, Language.ENGLISH)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-xs font-black text-emerald-700 hover:bg-emerald-100">
+                  <Volume2 className="h-4 w-4" /> Listen
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5 text-center">
+                <p className="text-xs font-black uppercase tracking-wide text-emerald-700">{currentLiteracyPrompt.prompt}</p>
+                <p className={`mt-3 font-black text-slate-900 ${literacyMode === 'fluency' ? 'text-lg leading-relaxed sm:text-xl' : 'text-3xl'}`}>{currentLiteracyPrompt.stimulus}</p>
+              </div>
+
+              {literacyMode === 'fluency' ? (
+                <div className="space-y-3 rounded-2xl border border-slate-200 p-4">
+                  <p className="text-sm text-slate-600">{currentLiteracyPrompt.explanation}</p>
+                  <button onClick={() => setFluencyMarked(true)} disabled={fluencyMarked} className={`rounded-xl px-4 py-2.5 text-xs font-black ${fluencyMarked ? 'bg-emerald-100 text-emerald-800' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}>
+                    {fluencyMarked ? 'Read-aloud practice marked complete' : 'I finished reading aloud'}
+                  </button>
+                  {fluencyMarked && <p className="text-xs text-slate-500">Optional self-check: Did you read the words accurately, group them into phrases, and notice punctuation?</p>}
+                </div>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {currentLiteracyPrompt.choices?.map((choice) => (
+                    <button
+                      key={choice}
+                      disabled={literacyChoice !== null}
+                      onClick={() => chooseLiteracyAnswer(choice)}
+                      className={`rounded-xl border p-3 text-sm font-bold transition-colors ${literacyChoice === choice ? choice === currentLiteracyPrompt.answer ? 'border-emerald-400 bg-emerald-50 text-emerald-800' : 'border-rose-300 bg-rose-50 text-rose-800' : literacyChoice !== null && choice === currentLiteracyPrompt.answer ? 'border-emerald-400 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-300'}`}
+                    >
+                      {choice}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {(literacyChoice !== null || fluencyMarked) && (
+                <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-slate-600">
+                    {literacyMode === 'fluency' ? currentLiteracyPrompt.explanation : literacyChoice === currentLiteracyPrompt.answer ? currentLiteracyPrompt.explanation : `A helpful answer is “${currentLiteracyPrompt.answer}.” ${currentLiteracyPrompt.explanation}`}
+                  </p>
+                  <button onClick={nextLiteracyPrompt} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-black text-white hover:bg-slate-800">
+                    Next activity <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </section>
+          </motion.div>
+        )}
+
+        {/* =================================================================== */}
+        {/* MODULE F: STATS / DETAILED PRACTICE HISTORY */}
         {/* =================================================================== */}
         {activeModule === 'stats' && (
           <motion.div

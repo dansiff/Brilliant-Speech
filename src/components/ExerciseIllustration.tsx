@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { getExerciseIllustration } from '../utils/exerciseVisuals';
 
 interface ExerciseIllustrationProps {
   word: string;
   className?: string;
   illustrationClassName?: string;
+}
+
+interface ExerciseImageProps extends ExerciseIllustrationProps {
+  imageUrl?: string;
 }
 
 export const ExerciseIllustration: React.FC<ExerciseIllustrationProps> = ({
@@ -22,3 +27,39 @@ export const ExerciseIllustration: React.FC<ExerciseIllustrationProps> = ({
     </span>
   </div>
 );
+
+export const ExerciseImage: React.FC<ExerciseImageProps> = ({
+  imageUrl,
+  word,
+  className = '',
+  illustrationClassName,
+}) => {
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [imageUrl]);
+
+  if (!imageUrl || imageUrl.includes('picsum.photos') || imageError) {
+    return (
+      <ExerciseIllustration
+        word={word}
+        className={className}
+        illustrationClassName={illustrationClassName}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={imageUrl}
+      alt={word}
+      className={className}
+      referrerPolicy="no-referrer"
+      onError={() => {
+        setImageError(true);
+        toast.info('Illustration unavailable; using built-in art instead.');
+      }}
+    />
+  );
+};

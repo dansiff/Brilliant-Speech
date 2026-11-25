@@ -14,7 +14,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
-  Flame
+  Flame,
+  BookOpen,
+  Brain,
+  Eye
 } from 'lucide-react';
 import { speakText } from '../utils/speechUtils';
 import { Language } from '../types';
@@ -24,7 +27,7 @@ import confetti from 'canvas-confetti';
 
 interface DirectionTask {
   id: string;
-  level: '1-Step' | '2-Step' | 'Conditional & Spatial';
+  level: '1-Step' | '2-Step' | '3-Step' | 'Conditional & Spatial';
   promptAudio: string;
   expectedSequence: string[]; // item IDs to click in order
   sceneItems: Array<{ id: string; name: string; emoji: string; category: string }>;
@@ -38,6 +41,30 @@ interface WhQuestionItem {
   correctAnswerId: string;
   explanation: string;
   options: Array<{ id: string; label: string; emoji: string }>;
+}
+
+interface ConceptQuestion {
+  id: string;
+  focus: 'Object identification' | 'Negation' | 'Spatial concepts' | 'Temporal concepts' | 'Semantic relationships';
+  question: string;
+  correctAnswerId: string;
+  explanation: string;
+  options: Array<{ id: string; label: string; emoji: string }>;
+}
+
+interface ListeningQuestion {
+  title: string;
+  passage: string;
+  question: string;
+  correctAnswerId: string;
+  explanation: string;
+  options: Array<{ id: string; label: string; emoji: string }>;
+}
+
+interface MemoryTrial {
+  prompt: string;
+  expectedSequence: string[];
+  items: Array<{ id: string; label: string; emoji: string }>;
 }
 
 const DIRECTION_TASKS: DirectionTask[] = [
@@ -78,6 +105,19 @@ const DIRECTION_TASKS: DirectionTask[] = [
       { id: 'flower', name: 'Pink Flower', emoji: '🌸', category: 'Nature' }
     ],
     clinicalRationale: 'Complex conditional linguistic syntax with executive working memory load.'
+  },
+  {
+    id: 'dir-4',
+    level: '3-Step',
+    promptAudio: 'First touch the star, then touch the yellow hat, and finally touch the banana.',
+    expectedSequence: ['star', 'hat', 'banana'],
+    sceneItems: [
+      { id: 'star', name: 'Bright Star', emoji: '⭐', category: 'Symbol' },
+      { id: 'hat', name: 'Yellow Hat', emoji: '👒', category: 'Clothing' },
+      { id: 'banana', name: 'Yellow Banana', emoji: '🍌', category: 'Food' },
+      { id: 'dog', name: 'Brown Dog', emoji: '🐕', category: 'Animal' }
+    ],
+    clinicalRationale: 'Listen for sequence words and carry out three steps in order.'
   }
 ];
 
@@ -129,11 +169,159 @@ const WH_QUESTIONS: WhQuestionItem[] = [
       { id: 'toothbrush', label: 'Toothbrush', emoji: '🪥' },
       { id: 'pencil', label: 'Crayon pencil', emoji: '✏️' }
     ]
+  },
+  {
+    id: 'wh-when-1',
+    type: 'When',
+    question: 'When do many people see stars in the sky?',
+    correctAnswerId: 'night',
+    explanation: 'Stars are easiest to see at night when the sky is dark.',
+    options: [
+      { id: 'night', label: 'At night', emoji: '🌙' },
+      { id: 'lunch', label: 'At lunchtime', emoji: '🥪' },
+      { id: 'morning', label: 'During the morning', emoji: '🌅' }
+    ]
+  }
+];
+
+const CONCEPT_QUESTIONS: ConceptQuestion[] = [
+  {
+    id: 'concept-object',
+    focus: 'Object identification',
+    question: 'Which object do we use to brush our teeth?',
+    correctAnswerId: 'brush',
+    explanation: 'A toothbrush is used to brush teeth.',
+    options: [
+      { id: 'brush', label: 'Toothbrush', emoji: '🪥' },
+      { id: 'comb', label: 'Comb', emoji: '🪮' },
+      { id: 'spoon', label: 'Spoon', emoji: '🥄' }
+    ]
+  },
+  {
+    id: 'concept-negation',
+    focus: 'Negation',
+    question: 'Which one is NOT a fruit?',
+    correctAnswerId: 'carrot',
+    explanation: 'A carrot is a vegetable, not a fruit.',
+    options: [
+      { id: 'apple', label: 'Apple', emoji: '🍎' },
+      { id: 'grape', label: 'Grapes', emoji: '🍇' },
+      { id: 'carrot', label: 'Carrot', emoji: '🥕' }
+    ]
+  },
+  {
+    id: 'concept-spatial',
+    focus: 'Spatial concepts',
+    question: 'The cat is under the table. Where is the cat?',
+    correctAnswerId: 'under',
+    explanation: 'Under means below or beneath the table.',
+    options: [
+      { id: 'under', label: 'Under the table', emoji: '🐈' },
+      { id: 'on', label: 'On the table', emoji: '🐈' },
+      { id: 'beside', label: 'Beside the table', emoji: '🐈' }
+    ]
+  },
+  {
+    id: 'concept-temporal',
+    focus: 'Temporal concepts',
+    question: 'You put on your pajamas after you take a bath. What happens first?',
+    correctAnswerId: 'bath',
+    explanation: 'After tells us the bath happens first, then pajamas.',
+    options: [
+      { id: 'bath', label: 'Take a bath', emoji: '🛁' },
+      { id: 'pajamas', label: 'Put on pajamas', emoji: '🛌' },
+      { id: 'breakfast', label: 'Eat breakfast', emoji: '🥣' }
+    ]
+  },
+  {
+    id: 'concept-relationship',
+    focus: 'Semantic relationships',
+    question: 'Which item goes with a lock?',
+    correctAnswerId: 'key',
+    explanation: 'A key is used to open or lock many locks.',
+    options: [
+      { id: 'key', label: 'Key', emoji: '🔑' },
+      { id: 'sock', label: 'Sock', emoji: '🧦' },
+      { id: 'leaf', label: 'Leaf', emoji: '🍃' }
+    ]
+  }
+];
+
+const LISTENING_QUESTIONS: ListeningQuestion[] = [
+  {
+    title: 'The lost mitten',
+    passage: 'On a cold morning, Mia put on her red coat and walked to school. At recess, she noticed one mitten was missing. Her friend Leo spotted it beside the playground slide and gave it back.',
+    question: 'Where did Leo find the mitten?',
+    correctAnswerId: 'slide',
+    explanation: 'Leo found the mitten beside the playground slide.',
+    options: [
+      { id: 'classroom', label: 'In the classroom', emoji: '🏫' },
+      { id: 'slide', label: 'Beside the slide', emoji: '🛝' },
+      { id: 'bus', label: 'On the bus', emoji: '🚌' }
+    ]
+  },
+  {
+    title: 'A garden surprise',
+    passage: 'Noah planted three seeds in a pot. He watered the soil and put the pot by a sunny window. After several days, small green leaves appeared.',
+    question: 'What helped the seeds grow?',
+    correctAnswerId: 'water-sun',
+    explanation: 'Noah watered the soil and placed the pot by a sunny window.',
+    options: [
+      { id: 'water-sun', label: 'Water and sunlight', emoji: '💧☀️' },
+      { id: 'snow', label: 'Snow and ice', emoji: '❄️' },
+      { id: 'toy', label: 'A toy truck', emoji: '🚚' }
+    ]
+  },
+  {
+    title: 'The rainy walk',
+    passage: 'The sky grew dark and raindrops began to fall. Ava opened her umbrella before walking home. When she arrived, her jacket was dry.',
+    question: 'Why did Ava open her umbrella?',
+    correctAnswerId: 'rain',
+    explanation: 'The umbrella helped keep Ava dry in the rain.',
+    options: [
+      { id: 'rain', label: 'To stay dry', emoji: '☂️' },
+      { id: 'sun', label: 'To block the sun', emoji: '🌞' },
+      { id: 'fly', label: 'To fly home', emoji: '🪽' }
+    ]
+  }
+];
+
+const MEMORY_TRIALS: MemoryTrial[] = [
+  {
+    prompt: 'Remember the order of three items.',
+    expectedSequence: ['apple', 'bell', 'star'],
+    items: [
+      { id: 'apple', label: 'Apple', emoji: '🍎' },
+      { id: 'bell', label: 'Bell', emoji: '🔔' },
+      { id: 'star', label: 'Star', emoji: '⭐' },
+      { id: 'fish', label: 'Fish', emoji: '🐟' }
+    ]
+  },
+  {
+    prompt: 'Listen, remember, and tap the items in order.',
+    expectedSequence: ['shoe', 'moon', 'cake'],
+    items: [
+      { id: 'shoe', label: 'Shoe', emoji: '👟' },
+      { id: 'moon', label: 'Moon', emoji: '🌙' },
+      { id: 'cake', label: 'Cake', emoji: '🍰' },
+      { id: 'frog', label: 'Frog', emoji: '🐸' }
+    ]
+  },
+  {
+    prompt: 'Try remembering the four items in sequence.',
+    expectedSequence: ['book', 'leaf', 'car', 'sun'],
+    items: [
+      { id: 'book', label: 'Book', emoji: '📘' },
+      { id: 'leaf', label: 'Leaf', emoji: '🍃' },
+      { id: 'car', label: 'Car', emoji: '🚗' },
+      { id: 'sun', label: 'Sun', emoji: '☀️' },
+      { id: 'ball', label: 'Ball', emoji: '⚽' }
+    ]
   }
 ];
 
 export const ReceptiveLanguageArena: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'directions' | 'wh_quest'>('directions');
+  const [activeTab, setActiveTab] = useState<'directions' | 'wh_quest' | 'listening' | 'concepts' | 'memory'>('directions');
   
   // Directions Task State
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number>(0);
@@ -147,8 +335,25 @@ export const ReceptiveLanguageArena: React.FC = () => {
   const [whScore, setWhScore] = useState<number>(0);
   const [totalWhAnswered, setTotalWhAnswered] = useState<number>(0);
 
+  const [listeningIndex, setListeningIndex] = useState(0);
+  const [selectedListeningOption, setSelectedListeningOption] = useState<string | null>(null);
+  const [listeningScore, setListeningScore] = useState(0);
+  const [totalListeningAnswered, setTotalListeningAnswered] = useState(0);
+  const [conceptIndex, setConceptIndex] = useState(0);
+  const [selectedConceptOption, setSelectedConceptOption] = useState<string | null>(null);
+  const [conceptScore, setConceptScore] = useState(0);
+  const [totalConceptAnswered, setTotalConceptAnswered] = useState(0);
+  const [memoryIndex, setMemoryIndex] = useState(0);
+  const [memorySequence, setMemorySequence] = useState<string[]>([]);
+  const [memoryResult, setMemoryResult] = useState<boolean | null>(null);
+  const [memoryScore, setMemoryScore] = useState(0);
+  const [totalMemoryTrials, setTotalMemoryTrials] = useState(0);
+
   const currentTask = DIRECTION_TASKS[currentTaskIndex];
   const currentWh = WH_QUESTIONS[currentWhIndex];
+  const currentListeningQuestion = LISTENING_QUESTIONS[listeningIndex];
+  const currentConceptQuestion = CONCEPT_QUESTIONS[conceptIndex];
+  const currentMemoryTrial = MEMORY_TRIALS[memoryIndex];
 
   // Directions handlers
   const handlePlayDirectionAudio = () => {
@@ -212,6 +417,75 @@ export const ReceptiveLanguageArena: React.FC = () => {
     setCurrentWhIndex((prev) => (prev + 1) % WH_QUESTIONS.length);
   };
 
+  const handleListeningAnswer = (optionId: string) => {
+    if (selectedListeningOption !== null) return;
+    setSelectedListeningOption(optionId);
+    setTotalListeningAnswered((prev) => prev + 1);
+    if (optionId === currentListeningQuestion.correctAnswerId) {
+      setListeningScore((prev) => prev + 1);
+      sfx.playSuccess();
+    } else {
+      sfx.playRetry();
+    }
+  };
+
+  const handleConceptAnswer = (optionId: string) => {
+    if (selectedConceptOption !== null) return;
+    setSelectedConceptOption(optionId);
+    setTotalConceptAnswered((prev) => prev + 1);
+    if (optionId === currentConceptQuestion.correctAnswerId) {
+      setConceptScore((prev) => prev + 1);
+      sfx.playSuccess();
+    } else {
+      sfx.playRetry();
+    }
+  };
+
+  const handleMemoryItem = (itemId: string) => {
+    if (memoryResult !== null) return;
+    const updated = [...memorySequence, itemId];
+    setMemorySequence(updated);
+    const isPrefixCorrect = updated.every((id, index) => id === currentMemoryTrial.expectedSequence[index]);
+    if (!isPrefixCorrect) {
+      setMemoryResult(false);
+      setTotalMemoryTrials((prev) => prev + 1);
+      sfx.playRetry();
+      return;
+    }
+    if (updated.length === currentMemoryTrial.expectedSequence.length) {
+      setMemoryResult(true);
+      setMemoryScore((prev) => prev + 1);
+      setTotalMemoryTrials((prev) => prev + 1);
+      sfx.playSuccess();
+    } else {
+      sfx.playPop();
+    }
+  };
+
+  const handleNextListening = () => {
+    setSelectedListeningOption(null);
+    setListeningIndex((prev) => (prev + 1) % LISTENING_QUESTIONS.length);
+  };
+
+  const handleNextConcept = () => {
+    setSelectedConceptOption(null);
+    setConceptIndex((prev) => (prev + 1) % CONCEPT_QUESTIONS.length);
+  };
+
+  const handleNextMemory = () => {
+    setMemorySequence([]);
+    setMemoryResult(null);
+    setMemoryIndex((prev) => (prev + 1) % MEMORY_TRIALS.length);
+  };
+
+  const playMemorySequence = () => {
+    const spokenItems = currentMemoryTrial.expectedSequence
+      .map((id) => currentMemoryTrial.items.find((item) => item.id === id)?.label)
+      .filter(Boolean)
+      .join(', ');
+    speakText(spokenItems, Language.ENGLISH);
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
       {/* Header */}
@@ -229,37 +503,35 @@ export const ReceptiveLanguageArena: React.FC = () => {
           </p>
         </div>
 
-        {/* Accuracy Counter */}
+        {/* Practice counter */}
         <div className="bg-blue-50 border border-blue-200 px-5 py-3 rounded-2xl flex items-center gap-4">
           <Target className="w-7 h-7 text-blue-600" />
           <div>
             <span className="text-[10px] font-bold text-blue-700 uppercase tracking-widest block">
-              Auditory Accuracy
+              Correct responses
             </span>
             <span className="text-2xl font-black text-blue-950">
-              {totalDirectionTrials + totalWhAnswered > 0
-                ? `${Math.round(((directionScore + whScore) / (totalDirectionTrials + totalWhAnswered)) * 100)}%`
-                : '100%'}
+              {directionScore + whScore + listeningScore + conceptScore + memoryScore}
             </span>
           </div>
         </div>
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-3 border-b border-slate-200 pb-2">
+      <div className="grid grid-cols-2 gap-2 border-b border-slate-200 pb-2 sm:grid-cols-3 lg:grid-cols-5">
         <button
           onClick={() => {
             sfx.playTap();
             setActiveTab('directions');
           }}
-          className={`px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
+          className={`px-3 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
             activeTab === 'directions'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
           }`}
         >
           <Compass className="w-4 h-4 text-blue-400" />
-          Multi-Step Following Directions
+          Directions
         </button>
 
         <button
@@ -267,14 +539,23 @@ export const ReceptiveLanguageArena: React.FC = () => {
             sfx.playTap();
             setActiveTab('wh_quest');
           }}
-          className={`px-5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 transition-all ${
+          className={`px-3 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
             activeTab === 'wh_quest'
               ? 'bg-slate-900 text-white shadow-sm'
               : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
           }`}
         >
           <HelpCircle className="w-4 h-4 text-purple-400" />
-          Wh-Questions & Reasoning Quest
+          WH Questions
+        </button>
+        <button onClick={() => setActiveTab('listening')} className={`px-3 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'listening' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
+          <BookOpen className="w-4 h-4 text-emerald-500" /> Listening
+        </button>
+        <button onClick={() => setActiveTab('concepts')} className={`px-3 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'concepts' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
+          <Eye className="w-4 h-4 text-amber-500" /> Concepts
+        </button>
+        <button onClick={() => setActiveTab('memory')} className={`px-3 py-2.5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${activeTab === 'memory' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}>
+          <Brain className="w-4 h-4 text-purple-500" /> Auditory memory
         </button>
       </div>
 
@@ -427,6 +708,106 @@ export const ReceptiveLanguageArena: React.FC = () => {
                 Next Question <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </motion.div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'listening' && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">Listening comprehension · Story {listeningIndex + 1}/{LISTENING_QUESTIONS.length}</span>
+              <h2 className="mt-3 text-2xl font-black text-slate-900">{currentListeningQuestion.title}</h2>
+            </div>
+            <button onClick={() => speakText(currentListeningQuestion.passage, Language.ENGLISH)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black text-white hover:bg-emerald-700">
+              <Volume2 className="h-4 w-4" /> Listen to story
+            </button>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5 text-base leading-relaxed text-slate-700">{currentListeningQuestion.passage}</div>
+          <div className="rounded-2xl bg-slate-50 p-5">
+            <h3 className="text-lg font-black text-slate-900">{currentListeningQuestion.question}</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {currentListeningQuestion.options.map((option) => (
+                <button key={option.id} disabled={selectedListeningOption !== null} onClick={() => handleListeningAnswer(option.id)} className={`flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border p-4 transition-colors ${selectedListeningOption !== null && option.id === currentListeningQuestion.correctAnswerId ? 'border-emerald-400 bg-emerald-50' : selectedListeningOption === option.id ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-white hover:border-emerald-300'}`}>
+                  <span className="text-4xl">{option.emoji}</span>
+                  <span className="text-sm font-bold text-slate-800">{option.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {selectedListeningOption !== null && (
+            <div className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-emerald-950">{currentListeningQuestion.explanation}</p>
+              <button onClick={handleNextListening} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white">Next story <ArrowRight className="h-4 w-4" /></button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'concepts' && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">{currentConceptQuestion.focus} · Challenge {conceptIndex + 1}/{CONCEPT_QUESTIONS.length}</span>
+              <p className="mt-3 text-sm text-slate-500">Listen, read the question, and choose the matching object or idea.</p>
+            </div>
+            <button onClick={() => speakText(currentConceptQuestion.question, Language.ENGLISH)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-xs font-black text-amber-800 hover:bg-amber-100"><Volume2 className="h-4 w-4" /> Hear question</button>
+          </div>
+          <h2 className="rounded-2xl bg-amber-50/70 p-6 text-center text-2xl font-black text-slate-900">{currentConceptQuestion.question}</h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {currentConceptQuestion.options.map((option) => (
+              <button key={option.id} disabled={selectedConceptOption !== null} onClick={() => handleConceptAnswer(option.id)} className={`flex min-h-32 flex-col items-center justify-center gap-2 rounded-2xl border p-4 transition-colors ${selectedConceptOption !== null && option.id === currentConceptQuestion.correctAnswerId ? 'border-emerald-400 bg-emerald-50' : selectedConceptOption === option.id ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-white hover:border-amber-300'}`}>
+                <span className="text-5xl">{option.emoji}</span>
+                <span className="text-sm font-bold text-slate-800">{option.label}</span>
+              </button>
+            ))}
+          </div>
+          {selectedConceptOption !== null && (
+            <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-amber-950">{currentConceptQuestion.explanation}</p>
+              <button onClick={handleNextConcept} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-2.5 text-xs font-black text-white">Next concept <ArrowRight className="h-4 w-4" /></button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'memory' && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-200">Auditory memory · Trial {memoryIndex + 1}/{MEMORY_TRIALS.length}</span>
+              <p className="mt-3 text-sm text-slate-600">{currentMemoryTrial.prompt} Listen, then tap the pictured items in the same order.</p>
+            </div>
+            <button onClick={playMemorySequence} className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-xs font-black text-white hover:bg-purple-700"><Volume2 className="h-4 w-4" /> Listen to sequence</button>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-purple-50 p-4" aria-live="polite">
+            <span className="mr-2 text-xs font-bold text-purple-800">Your taps:</span>
+            {memorySequence.length ? memorySequence.map((id, index) => {
+              const item = currentMemoryTrial.items.find((candidate) => candidate.id === id);
+              return <span key={`${id}-${index}`} className="rounded-lg bg-white px-3 py-2 text-xl shadow-sm" aria-label={item?.label}>{item?.emoji}</span>;
+            }) : <span className="text-xs text-purple-500">No items yet</span>}
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {currentMemoryTrial.items.map((item) => (
+              <button key={item.id} disabled={memoryResult !== null} onClick={() => handleMemoryItem(item.id)} className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 hover:border-purple-300 hover:bg-purple-50 disabled:opacity-70">
+                <span className="text-5xl">{item.emoji}</span>
+                <span className="text-sm font-bold text-slate-800">{item.label}</span>
+              </button>
+            ))}
+          </div>
+          {memoryResult !== null && (
+            <div className={`flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between ${memoryResult ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
+              <div>
+                <p className="text-sm font-bold text-slate-900">{memoryResult ? 'Sequence complete!' : 'That sequence did not match. Listen again or try another round.'}</p>
+                {!memoryResult && <button onClick={() => { setMemorySequence([]); setMemoryResult(null); playMemorySequence(); }} className="mt-2 text-xs font-bold text-purple-700 underline">Retry this sequence</button>}
+              </div>
+              <button onClick={handleNextMemory} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-purple-700 px-4 py-2.5 text-xs font-black text-white">Next sequence <ArrowRight className="h-4 w-4" /></button>
+            </div>
+          )}
+          {memoryResult === null && memorySequence.length > 0 && (
+            <div className="text-center">
+              <button onClick={() => setMemorySequence([])} className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200"><RotateCcw className="h-3.5 w-3.5" /> Start sequence again</button>
+            </div>
           )}
         </div>
       )}

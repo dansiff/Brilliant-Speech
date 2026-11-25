@@ -35,7 +35,25 @@ interface DttcTarget {
   visualEmoji: string;
   carrierPhrase: string;
   tactileCue: string;
+  syllables?: string[];
 }
+
+const speakAtRate = (text: string, rate: number): Promise<void> => new Promise((resolve) => {
+  if (typeof window === 'undefined' || !window.speechSynthesis) {
+    resolve();
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  utterance.rate = Math.max(0.6, Math.min(1.2, rate));
+  utterance.pitch = 1.05;
+  const voice = window.speechSynthesis.getVoices().find((item) => item.lang.toLowerCase().startsWith('en'));
+  if (voice) utterance.voice = voice;
+  utterance.onend = () => resolve();
+  utterance.onerror = () => resolve();
+  window.speechSynthesis.speak(utterance);
+});
 
 interface OralMotorExercise {
   id: string;
@@ -65,7 +83,8 @@ const DTTC_TARGETS: DttcTarget[] = [
     syllableStructure: 'CVCV',
     visualEmoji: '👋',
     carrierPhrase: 'Wave your hand and say...',
-    tactileCue: 'Two quick bilabial lip pops in rhythmic sequence.'
+    tactileCue: 'Two quick bilabial lip pops in rhythmic sequence.',
+    syllables: ['bye', 'bye']
   },
   {
     id: 'dttc-pop',
@@ -83,7 +102,26 @@ const DTTC_TARGETS: DttcTarget[] = [
     syllableStructure: 'VCV',
     visualEmoji: '🚪',
     carrierPhrase: 'Please help me...',
-    tactileCue: 'Transition smoothly from rounded open vowel to lip seal.'
+    tactileCue: 'Transition smoothly from rounded open vowel to lip seal.',
+    syllables: ['o', 'pen']
+  },
+  {
+    id: 'dttc-up',
+    targetWord: 'Up',
+    ipa: 'ʌp',
+    syllableStructure: 'VC',
+    visualEmoji: '⬆️',
+    carrierPhrase: 'Look ...',
+    tactileCue: 'Move from an open vowel into a gentle lip closure.'
+  },
+  {
+    id: 'dttc-no',
+    targetWord: 'No',
+    ipa: 'noʊ',
+    syllableStructure: 'CV',
+    visualEmoji: '🙅',
+    carrierPhrase: 'Say ...',
+    tactileCue: 'Start with the nasal sound, then glide into the vowel.'
   },
   {
     id: 'dttc-banana',
@@ -92,7 +130,8 @@ const DTTC_TARGETS: DttcTarget[] = [
     syllableStructure: 'Multisyllabic',
     visualEmoji: '🍌',
     carrierPhrase: 'I am peeling a yellow...',
-    tactileCue: 'Weak-Strong-Weak multisyllabic stress cadence.'
+    tactileCue: 'Notice the syllable sequence and the model’s stress pattern.',
+    syllables: ['ba', 'na', 'na']
   }
 ];
 
@@ -149,6 +188,13 @@ export const MotorSpeechStudio: React.FC = () => {
   const [isDelayedTimerActive, setIsDelayedTimerActive] = useState<boolean>(false);
   const [delayCountdown, setDelayCountdown] = useState<number>(3);
   const [scoreResult, setScoreResult] = useState<number | null>(null);
+  const [awaitingClinicianRating, setAwaitingClinicianRating] = useState(false);
+  const [recordedTrials, setRecordedTrials] = useState(0);
+  const [paceRate, setPaceRate] = useState(0.75);
+  const [delaySeconds, setDelaySeconds] = useState(3);
+  const [cueLevel, setCueLevel] = useState<'Visual' | 'Verbal' | 'Combined' | 'Minimal'>('Combined');
+  const [clinicianCue, setClinicianCue] = useState('');
+  const [stressCue, setStressCue] = useState<'Model' | 'Even beats' | 'First syllable' | 'Middle syllable' | 'Last syllable'>('Model');
   const [dttcPoints, setDttcPoints] = useState<number>(0);
   const [streak, setStreak] = useState<number>(0);
 
@@ -158,9 +204,18 @@ export const MotorSpeechStudio: React.FC = () => {
   const [omSecondsLeft, setOmSecondsLeft] = useState<number>(15);
   const [completedReps, setCompletedReps] = useState<number>(0);
   const omTimerRef = useRef<any>(null);
+  const delayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentTarget = DTTC_TARGETS[selectedTargetIndex];
   const currentOm = ORAL_MOTOR_EXERCISES[selectedOmIndex];
+  const targetSyllables = currentTarget.syllables || [currentTarget.targetWord];
+  const stressIndex = stressCue === 'First syllable'
+    ? 0
+    : stressCue === 'Middle syllable'
+      ? Math.floor((targetSyllables.length - 1) / 2)
+      : stressCue === 'Last syllable'
+        ? targetSyllables.length - 1
+        : -1;
 
   // DTTC Stage Names & Descriptions
   const DTTC_STAGES = [
@@ -180,10 +235,10 @@ export const MotorSpeechStudio: React.FC = () => {
     },
     {
       level: 3,
-      title: 'Level 3: Delayed Imitation (3-Sec Pause)',
+      title: 'Level 3: Delayed Imitation',
       badge: 'Cognitive Hold',
-      description: '3-second cognitive latency period between model and child production to reinforce internal motor programming.',
-      instructions: 'Wait for the 3-second countdown to reach zero, then produce the target word!'
+      description: 'A clinician-adjustable pause between the model and learner response.',
+      instructions: 'Wait for the selected countdown to reach zero, then produce the target word.'
     },
     {
       level: 4,
@@ -194,32 +249,52 @@ export const MotorSpeechStudio: React.FC = () => {
     }
   ];
 
+  const cancelImitationCountdown = () => {
+    if (delayTimerRef.current) clearInterval(delayTimerRef.current);
+    delayTimerRef.current = null;
+    setIsDelayedTimerActive(false);
+  };
+
   const handlePlayModelAudio = (slow: boolean = false) => {
     sfx.playTap();
-    speakText(currentTarget.targetWord, Language.ENGLISH);
+    return speakAtRate(currentTarget.targetWord, slow ? Math.min(paceRate, 0.65) : paceRate);
+  };
+
+  const startImitationCountdown = (seconds: number) => {
+    setIsDelayedTimerActive(true);
+    setDelayCountdown(seconds);
+    if (delayTimerRef.current) clearInterval(delayTimerRef.current);
+    delayTimerRef.current = setInterval(() => {
+      setDelayCountdown((prev) => {
+        if (prev <= 1) {
+          if (delayTimerRef.current) clearInterval(delayTimerRef.current);
+          delayTimerRef.current = null;
+          setIsDelayedTimerActive(false);
+          void executeMicCapture();
+          return 0;
+        }
+        sfx.playMetronomeTick();
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const handleStartDttcTrial = async () => {
     sfx.playTap();
-    if (dttcStage === 3) {
-      // Start 3-second delayed countdown
-      setIsDelayedTimerActive(true);
-      setDelayCountdown(3);
-      const timer = setInterval(() => {
-        setDelayCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            setIsDelayedTimerActive(false);
-            executeMicCapture();
-            return 0;
-          }
-          sfx.playMetronomeTick();
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      executeMicCapture();
+    setAwaitingClinicianRating(false);
+    setScoreResult(null);
+    if (dttcStage === 1) {
+      const capture = executeMicCapture();
+      handlePlayModelAudio();
+      await capture;
+      return;
     }
+    if (dttcStage === 2 || dttcStage === 3) {
+      await handlePlayModelAudio();
+      startImitationCountdown(dttcStage === 2 ? 1 : delaySeconds);
+      return;
+    }
+    await executeMicCapture();
   };
 
   const executeMicCapture = async () => {
@@ -239,23 +314,26 @@ export const MotorSpeechStudio: React.FC = () => {
 
     try {
       await audioPipeline.stopRecording();
-      // Calculate realistic motor execution score
-      const simScore = 80 + Math.floor(Math.random() * 18);
-      setScoreResult(simScore);
-
-      if (simScore >= 75) {
-        sfx.playSuccess();
-        setDttcPoints((prev) => prev + dttcStage * 25);
-        setStreak((prev) => prev + 1);
-        confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
-        toast.success(`Level ${dttcStage} Motor Trial Mastered! (+${dttcStage * 25} pts)`);
-      } else {
-        sfx.playRetry();
-        setStreak(0);
-        toast.info('Good attempt! Focus on the tactile mouth cue and try once more.');
-      }
+      setRecordedTrials((count) => count + 1);
+      setAwaitingClinicianRating(true);
+      toast.info('Trial recorded. A clinician or practice partner can record an observation below.');
     } catch (e) {
       toast.error('Evaluation failed. Please try again.');
+    }
+  };
+
+  const recordClinicianRating = (metTarget: boolean) => {
+    setScoreResult(metTarget ? 100 : 0);
+    setAwaitingClinicianRating(false);
+    if (metTarget) {
+      sfx.playSuccess();
+      setDttcPoints((prev) => prev + dttcStage * 25);
+      setStreak((prev) => prev + 1);
+      toast.success('Clinician observation saved: target observed.');
+    } else {
+      sfx.playRetry();
+      setStreak(0);
+      toast.info('Clinician observation saved: continue practice at the selected level.');
     }
   };
 
@@ -306,6 +384,7 @@ export const MotorSpeechStudio: React.FC = () => {
   useEffect(() => {
     return () => {
       if (omTimerRef.current) clearInterval(omTimerRef.current);
+      if (delayTimerRef.current) clearInterval(delayTimerRef.current);
     };
   }, []);
 
@@ -388,12 +467,17 @@ export const MotorSpeechStudio: React.FC = () => {
               return (
                 <button
                   key={target.id}
+                  type="button"
+                  disabled={isRecording || isDelayedTimerActive}
                   onClick={() => {
                     sfx.playPop();
+                    cancelImitationCountdown();
                     setSelectedTargetIndex(idx);
                     setScoreResult(null);
+                    setAwaitingClinicianRating(false);
+                    setRecordedTrials(0);
                   }}
-                  className={`p-4 rounded-2xl border transition-all text-left flex flex-col justify-between ${
+                  className={`p-4 rounded-2xl border transition-all text-left flex flex-col justify-between disabled:cursor-not-allowed disabled:opacity-50 ${
                     isSelected
                       ? 'bg-amber-500 text-white border-amber-600 shadow-lg scale-[1.02]'
                       : 'bg-white text-slate-800 border-slate-200 hover:border-amber-300 hover:bg-amber-50/30'
@@ -421,14 +505,19 @@ export const MotorSpeechStudio: React.FC = () => {
               const isPassed = st.level < dttcStage;
 
               return (
-                <div
+                <button
                   key={st.level}
+                  type="button"
+                  disabled={isRecording || isDelayedTimerActive}
+                  aria-pressed={isCurrent}
                   onClick={() => {
                     sfx.playTap();
+                    cancelImitationCountdown();
                     setDttcStage(st.level as any);
                     setScoreResult(null);
+                    setAwaitingClinicianRating(false);
                   }}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                  className={`w-full text-left p-4 rounded-2xl border transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
                     isCurrent
                       ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-amber-400'
                       : isPassed
@@ -443,7 +532,7 @@ export const MotorSpeechStudio: React.FC = () => {
                     {isPassed && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
                   </div>
                   <h4 className="text-xs font-black truncate">{st.badge}</h4>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -478,6 +567,21 @@ export const MotorSpeechStudio: React.FC = () => {
               <p className="text-xs sm:text-sm font-mono text-slate-500">
                 IPA: /{currentTarget.ipa}/ • Cadence: {currentTarget.syllableStructure}
               </p>
+              {targetSyllables.length > 1 && (
+                <div className="flex flex-wrap justify-center gap-2" aria-label={`Syllable stress cue: ${stressCue}`}>
+                  {targetSyllables.map((syllable, index) => (
+                    <span
+                      key={`${syllable}-${index}`}
+                      className={`rounded-lg px-3 py-2 font-black ${stressCue === 'Even beats' ? 'bg-indigo-100 text-indigo-900' : stressIndex === index ? 'bg-amber-500 text-white ring-2 ring-amber-700' : 'bg-white text-slate-700 border border-slate-200'}`}
+                    >
+                      {syllable}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {stressCue !== 'Model' && (
+                <p className="text-xs text-slate-600">Visual stress cue only; the clinician directs the spoken rhythm.</p>
+              )}
 
               {/* Tactile Cue Callout */}
               <div className="max-w-md mx-auto p-4 rounded-2xl bg-white border border-amber-200 shadow-sm text-xs text-slate-700 text-left flex items-start gap-3">
@@ -487,6 +591,66 @@ export const MotorSpeechStudio: React.FC = () => {
                   {currentTarget.tactileCue}
                 </div>
               </div>
+              <div className="mx-auto grid max-w-3xl grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                <label className="rounded-xl border border-amber-200 bg-white p-3 text-xs font-bold text-slate-700">
+                  Model pace: {paceRate.toFixed(2)}×
+                  <input
+                    type="range"
+                    min="0.6"
+                    max="1.2"
+                    step="0.05"
+                    value={paceRate}
+                    onChange={(event) => setPaceRate(Number(event.target.value))}
+                    className="mt-2 w-full accent-amber-600"
+                    aria-label="Adjust model playback pace"
+                  />
+                </label>
+                <label className="rounded-xl border border-amber-200 bg-white p-3 text-xs font-bold text-slate-700">
+                  Imitation wait: {delaySeconds} seconds
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    step="1"
+                    value={delaySeconds}
+                    onChange={(event) => setDelaySeconds(Number(event.target.value))}
+                    className="mt-2 w-full accent-amber-600"
+                    aria-label="Adjust delayed imitation wait"
+                  />
+                </label>
+                <label className="rounded-xl border border-amber-200 bg-white p-3 text-xs font-bold text-slate-700">
+                  Clinician cue level
+                  <select
+                    value={cueLevel}
+                    onChange={(event) => setCueLevel(event.target.value as typeof cueLevel)}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-2"
+                  >
+                    {(['Visual', 'Verbal', 'Combined', 'Minimal'] as const).map((level) => <option key={level}>{level}</option>)}
+                  </select>
+                </label>
+                <label className="rounded-xl border border-amber-200 bg-white p-3 text-xs font-bold text-slate-700">
+                  Stress / prosody cue
+                  <select
+                    value={stressCue}
+                    onChange={(event) => setStressCue(event.target.value as typeof stressCue)}
+                    className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-2"
+                  >
+                    {(['Model', 'Even beats', 'First syllable', 'Middle syllable', 'Last syllable'] as const).map((cue) => <option key={cue}>{cue}</option>)}
+                  </select>
+                </label>
+                <label className="sm:col-span-2 rounded-xl border border-amber-200 bg-white p-3 text-xs font-bold text-slate-700">
+                  Clinician-selected cue or note (optional)
+                  <input
+                    value={clinicianCue}
+                    onChange={(event) => setClinicianCue(event.target.value)}
+                    placeholder="Enter a cue to use for this practice turn"
+                    className="mt-2 w-full rounded-lg border border-slate-300 p-2 font-normal"
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-slate-600" aria-live="polite">
+                Cue: {cueLevel} · Stress: {stressCue}{clinicianCue ? ` · ${clinicianCue}` : ''}
+              </p>
             </div>
 
             {/* Delayed Countdown Overlay */}
@@ -497,12 +661,12 @@ export const MotorSpeechStudio: React.FC = () => {
                 className="p-6 bg-slate-900 text-white rounded-2xl text-center space-y-2"
               >
                 <span className="text-xs font-black uppercase tracking-wider text-amber-400">
-                  Hold Motor Plan in Memory...
+                  Prepare for imitation...
                 </span>
                 <div className="text-5xl font-black font-mono text-white animate-pulse">
                   {delayCountdown}
                 </div>
-                <p className="text-xs text-slate-400">Get ready to speak when timer hits zero!</p>
+                <p className="text-xs text-slate-400">Speak when the wait reaches zero.</p>
               </motion.div>
             )}
 
@@ -519,16 +683,26 @@ export const MotorSpeechStudio: React.FC = () => {
               >
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-black uppercase tracking-wider">
-                    Motor Plan Execution Accuracy
+                    Clinician observation
                   </span>
-                  <span className="text-2xl font-black">{scoreResult}%</span>
+                  <span className="text-2xl font-black">{scoreResult === 100 ? 'Target observed' : 'Practice again'}</span>
                 </div>
                 <p className="text-xs leading-relaxed">
-                  {scoreResult >= 75
-                    ? 'Stellar coarticulation stability and accurate phoneme placement!'
-                    : 'Good attempt. Focus on aligning the lips and tongue before initiating voice.'}
+                  This is a clinician-entered note, not an automatic speech assessment.
                 </p>
               </motion.div>
+            )}
+
+            <p className="text-xs font-bold text-slate-600" aria-live="polite">Recorded practice trials: {recordedTrials}</p>
+            {awaitingClinicianRating && (
+              <div className="flex flex-col sm:flex-row gap-3" role="group" aria-label="Clinician observation">
+                <button type="button" onClick={() => recordClinicianRating(true)} className="flex-1 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800">
+                  Clinician: target observed
+                </button>
+                <button type="button" onClick={() => recordClinicianRating(false)} className="flex-1 rounded-xl bg-slate-700 px-4 py-3 text-sm font-bold text-white hover:bg-slate-800">
+                  Clinician: try again
+                </button>
+              </div>
             )}
 
             {/* Action Buttons */}
@@ -540,7 +714,7 @@ export const MotorSpeechStudio: React.FC = () => {
                   className="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white font-black text-base shadow-xl shadow-amber-200 flex items-center justify-center gap-3 transition-all disabled:opacity-50"
                 >
                   <Mic className="w-5 h-5" />
-                  {dttcStage === 3 ? 'Start 3-Second Delayed Trial' : 'Record Motor Attempt'}
+                  {dttcStage === 1 ? 'Model together & record' : dttcStage === 2 ? 'Model, then imitate' : dttcStage === 3 ? `Model, wait ${delaySeconds}s, imitate` : 'Record independent attempt'}
                 </button>
               ) : (
                 <button
@@ -548,11 +722,11 @@ export const MotorSpeechStudio: React.FC = () => {
                   className="w-full py-4 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-98 text-white font-black text-base shadow-xl shadow-rose-200 flex items-center justify-center gap-3 animate-pulse transition-all"
                 >
                   <MicOff className="w-5 h-5" />
-                  Stop & Evaluate Production
+                  Stop recording
                 </button>
               )}
 
-              {scoreResult !== null && scoreResult >= 75 && dttcStage < 4 && (
+              {scoreResult === 100 && dttcStage < 4 && (
                 <button
                   onClick={handleNextStage}
                   className="w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md"

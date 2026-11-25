@@ -24,16 +24,17 @@ export const PronunciationVisualizer: React.FC<PronunciationVisualizerProps> = (
   // Determine mouth state
   const mouthState = useMemo(() => {
     const text = mouthPosition.toLowerCase();
-    if (text.includes('rounded') || text.includes('lips together')) return 'closed';
+    if (text.includes('lips together')) return 'closed';
     if (text.includes('wide')) return 'wide';
     if (text.includes('open')) return 'open';
+    if (text.includes('rounded')) return 'rounded';
     return 'neutral';
   }, [mouthPosition]);
 
   // Determine tongue state
   const tongueState = useMemo(() => {
     const text = tonguePlacement.toLowerCase();
-    if (text.includes('curled') || text.includes('roof')) return 'up';
+    if (text.includes('curled') || text.includes('roof') || text.includes('behind the upper teeth')) return 'up';
     if (text.includes('between teeth')) return 'between';
     if (text.includes('back')) return 'back';
     return 'flat';
@@ -44,6 +45,7 @@ export const PronunciationVisualizer: React.FC<PronunciationVisualizerProps> = (
     neutral: "M 20 50 Q 50 55 80 50 Q 50 60 20 50",
     open: "M 20 40 Q 50 20 80 40 Q 50 80 20 40",
     wide: "M 10 50 Q 50 45 90 50 Q 50 70 10 50",
+    rounded: "M 38 30 Q 50 20 62 30 Q 70 50 62 70 Q 50 80 38 70 Q 30 50 38 30",
     closed: "M 35 50 Q 50 48 65 50 Q 50 52 35 50"
   };
 
@@ -72,26 +74,27 @@ export const PronunciationVisualizer: React.FC<PronunciationVisualizerProps> = (
       {/* Mouth Visualizer */}
       <div className="flex flex-col items-center gap-2">
         <motion.button
+          type="button"
+          disabled={!mouthAudioUrl || !playTargetAudio}
+          aria-label="Simplified mouth position diagram"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleMouthClick}
-          className={`w-24 h-24 bg-white rounded-2xl shadow-inner border border-slate-100 flex items-center justify-center overflow-hidden relative group ${mouthAudioUrl ? 'cursor-pointer' : 'cursor-default'}`}
+          className={`w-24 h-24 bg-white rounded-2xl shadow-inner border border-slate-100 flex items-center justify-center overflow-hidden relative group ${mouthAudioUrl && playTargetAudio ? 'cursor-pointer' : 'cursor-default'}`}
         >
           {mouthAnimationUrl && !mouthAnimationUrl.includes('picsum.photos') ? (
             <img src={mouthAnimationUrl} className="w-full h-full object-cover" alt="Mouth Diagram" referrerPolicy="no-referrer" />
           ) : (
-            <svg viewBox="0 0 100 100" className="w-full h-full p-2">
+            <svg viewBox="0 0 100 100" className="w-full h-full p-2" role="img" aria-label={`Simplified mouth shape: ${mouthState}`}>
               <motion.path
                 d={mouthPaths[mouthState as keyof typeof mouthPaths]}
                 fill="#f87171"
                 stroke="#b91c1c"
                 strokeWidth="2"
                 animate={{ 
-                  d: mouthPaths[mouthState as keyof typeof mouthPaths],
                   scale: [1, 1.02, 1],
                 }}
                 transition={{ 
-                  d: { type: 'spring', stiffness: 100 },
                   scale: { repeat: Infinity, duration: 2, ease: "easeInOut" }
                 }}
               />
@@ -109,15 +112,18 @@ export const PronunciationVisualizer: React.FC<PronunciationVisualizerProps> = (
       {/* Tongue Visualizer */}
       <div className="flex flex-col items-center gap-2">
         <motion.button
+          type="button"
+          disabled={!tongueAudioUrl || !playTargetAudio}
+          aria-label="Simplified tongue placement diagram"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleTongueClick}
-          className={`w-24 h-24 bg-white rounded-2xl shadow-inner border border-slate-100 flex items-center justify-center overflow-hidden relative group ${tongueAudioUrl ? 'cursor-pointer' : 'cursor-default'}`}
+          className={`w-24 h-24 bg-white rounded-2xl shadow-inner border border-slate-100 flex items-center justify-center overflow-hidden relative group ${tongueAudioUrl && playTargetAudio ? 'cursor-pointer' : 'cursor-default'}`}
         >
           {tongueAnimationUrl && !tongueAnimationUrl.includes('picsum.photos') ? (
             <img src={tongueAnimationUrl} className="w-full h-full object-cover" alt="Tongue Diagram" referrerPolicy="no-referrer" />
           ) : (
-            <svg viewBox="0 0 100 100" className="w-full h-full p-2">
+            <svg viewBox="0 0 100 100" className="w-full h-full p-2" role="img" aria-label={`Simplified tongue posture: ${tongueState}`}>
               {/* Teeth indicator for reference */}
               <motion.rect 
                 x="30" y="30" width="40" height="10" rx="2" fill="#fff" stroke="#e2e8f0" strokeWidth="1" 
@@ -130,11 +136,9 @@ export const PronunciationVisualizer: React.FC<PronunciationVisualizerProps> = (
                 stroke="#e11d48"
                 strokeWidth="2"
                 animate={{ 
-                  d: tonguePaths[tongueState as keyof typeof tonguePaths],
                   y: [0, 2, 0]
                 }}
                 transition={{ 
-                  d: { type: 'spring', stiffness: 100 },
                   y: { repeat: Infinity, duration: 2, ease: "easeInOut" }
                 }}
               />

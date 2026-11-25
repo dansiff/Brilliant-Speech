@@ -18,12 +18,48 @@ import {
   Hand,
   Users as UsersIcon,
   User,
-  Loader2
+  Loader2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Exercise, ExerciseType, Language, Difficulty } from '../types';
 import { PronunciationVisualizer } from './PronunciationVisualizer';
 import { SpeechPipelineFeedback } from './SpeechPipelineFeedback';
 import { FALLBACK_IMAGE } from '../constants';
+import { speakText } from '../utils/speechUtils';
+
+type DrillPosition = 'Initial' | 'Medial' | 'Final';
+type DrillLevel = 'Sound' | 'Syllable' | 'Word' | 'Phrase' | 'Sentence' | 'Conversation';
+
+const ARTICULATION_DRILL_BANK: Record<string, { initial: string[]; medial: string[]; final: string[]; blends: string[] }> = {
+  '/p/': { initial: ['pig', 'paper'], medial: ['apple', 'puppy'], final: ['cup', 'map'], blends: ['spoon', 'plane'] },
+  '/b/': { initial: ['ball', 'baby'], medial: ['rabbit', 'cabin'], final: ['tub', 'web'], blends: ['blue', 'bread'] },
+  '/t/': { initial: ['toe', 'table'], medial: ['button', 'pretzel'], final: ['hat', 'boat'], blends: ['star', 'stop'] },
+  '/d/': { initial: ['dog', 'door'], medial: ['ladder', 'candy'], final: ['bed', 'food'], blends: ['drum', 'dragon'] },
+  '/k/': { initial: ['key', 'kite'], medial: ['rocket', 'cookie'], final: ['book', 'duck'], blends: ['cloud', 'crab'] },
+  '/g/': { initial: ['goat', 'game'], medial: ['wagon', 'tiger'], final: ['pig', 'egg'], blends: ['glass', 'glue'] },
+  '/m/': { initial: ['moon', 'mop'], medial: ['lemon', 'hammer'], final: ['home', 'ham'], blends: ['smile', 'small'] },
+  '/n/': { initial: ['nose', 'net'], medial: ['dinner', 'window'], final: ['sun', 'pan'], blends: ['snail', 'snow'] },
+  '/f/': { initial: ['fish', 'fan'], medial: ['muffin', 'coffee'], final: ['leaf', 'roof'], blends: ['flame', 'flower'] },
+  '/v/': { initial: ['van', 'vase'], medial: ['seven', 'shovel'], final: ['five', 'love'], blends: [] },
+  '/s/': { initial: ['sun', 'soap'], medial: ['messy', 'pencil'], final: ['bus', 'mouse'], blends: ['spoon', 'star', 'slide'] },
+  '/z/': { initial: ['zoo', 'zipper'], medial: ['lizard', 'music'], final: ['buzz', 'nose'], blends: [] },
+  '/ʃ/': { initial: ['ship', 'shoe'], medial: ['washing', 'ocean'], final: ['fish', 'brush'], blends: ['shrimp', 'shred'] },
+  '/ʒ/': { initial: ['genre'], medial: ['measure', 'usual'], final: ['beige', 'rouge'], blends: [] },
+  '/θ/': { initial: ['thumb', 'think'], medial: ['toothpaste', 'birthday'], final: ['bath', 'tooth'], blends: ['three', 'throw'] },
+  '/ð/': { initial: ['this', 'that'], medial: ['feather', 'mother'], final: ['breathe', 'smooth'], blends: ['these', 'those'] },
+  '/tʃ/': { initial: ['chair', 'cheese'], medial: ['kitchen', 'teacher'], final: ['watch', 'peach'], blends: ['chocolate', 'cheerful'] },
+  '/dʒ/': { initial: ['jam', 'juice'], medial: ['pajamas', 'magic'], final: ['page', 'bridge'], blends: ['jungle', 'jigsaw'] },
+  '/ŋ/': { initial: [], medial: ['singer', 'finger'], final: ['sing', 'ring'], blends: [] },
+  '/l/': { initial: ['lion', 'leaf'], medial: ['balloon', 'yellow'], final: ['ball', 'pool'], blends: ['blue', 'slide', 'clown'] },
+  '/r/': { initial: ['red', 'rain'], medial: ['carrot', 'parrot'], final: ['car', 'door'], blends: ['train', 'crab', 'brush'] },
+  '/w/': { initial: ['web', 'water'], medial: ['away', 'flower'], final: ['cow', 'bow'], blends: ['twist', 'swim'] },
+  '/j/': { initial: ['yoyo', 'yellow'], medial: ['onion', 'canyon'], final: ['toy', 'boy'], blends: [] },
+  '/h/': { initial: ['hat', 'house'], medial: ['behind', 'perhaps'], final: ['—', '—'], blends: ['hello', 'happy'] },
+};
+
+const DRILL_LEVELS: DrillLevel[] = ['Sound', 'Syllable', 'Word', 'Phrase', 'Sentence', 'Conversation'];
+const normalizePhoneme = (phoneme: string) => `/${phoneme.replace(/^\/|\/$/g, '')}/`;
 
 interface SpecializedExerciseViewProps {
   exercise: Exercise;
@@ -80,6 +116,44 @@ export const SpecializedExerciseView: React.FC<SpecializedExerciseViewProps> = (
   const [currentSyllableIndex, setCurrentSyllableIndex] = useState(-1);
   const [expansionStep, setExpansionStep] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [selectedDrillPhoneme, setSelectedDrillPhoneme] = useState(normalizePhoneme(exercise.targetPhonemes?.[0] || '/s/'));
+  const [drillPosition, setDrillPosition] = useState<DrillPosition>('Initial');
+  const [drillLevel, setDrillLevel] = useState<DrillLevel>('Sound');
+  const [drillWordIndex, setDrillWordIndex] = useState(0);
+  const [drillUsesBlends, setDrillUsesBlends] = useState(false);
+  const [drillTrials, setDrillTrials] = useState(0);
+
+  useEffect(() => {
+    setSelectedDrillPhoneme(normalizePhoneme(exercise.targetPhonemes?.[0] || '/s/'));
+    setDrillPosition('Initial');
+    setDrillLevel('Sound');
+    setDrillWordIndex(0);
+    setDrillUsesBlends(false);
+    setDrillTrials(0);
+  }, [exercise.id]);
+
+  const drillPhonemes = Array.from(new Set([
+    ...(exercise.targetPhonemes || []).map(normalizePhoneme),
+    ...Object.keys(ARTICULATION_DRILL_BANK)
+  ]));
+  const drillProfile = ARTICULATION_DRILL_BANK[selectedDrillPhoneme] ||
+    ARTICULATION_DRILL_BANK[`/${selectedDrillPhoneme.replace(/\//g, '')}/`];
+  const drillWords = drillProfile
+    ? (drillUsesBlends ? drillProfile.blends : drillProfile[drillPosition.toLowerCase() as 'initial' | 'medial' | 'final']).filter(word => word.trim() && word !== '—')
+    : [exercise.targetWord || exercise.title];
+  const currentDrillWord = drillWords[drillWordIndex % Math.max(drillWords.length, 1)] || exercise.targetWord || exercise.title;
+  const missingPositionSample = drillLevel === 'Word' && !!drillProfile && drillWords.length === 0;
+  const drillPrompt = drillLevel === 'Sound'
+    ? selectedDrillPhoneme
+    : drillLevel === 'Syllable'
+      ? `${selectedDrillPhoneme.replace(/\//g, '')}ah`
+      : drillLevel === 'Word'
+        ? currentDrillWord
+        : drillLevel === 'Phrase'
+          ? `Say ${currentDrillWord}.`
+          : drillLevel === 'Sentence'
+            ? `I see a ${currentDrillWord}.`
+            : `Tell me something about ${currentDrillWord}.`;
 
   // Caregiver 3D Assessment Rubric States
   const [showRubric, setShowRubric] = useState(false);
@@ -307,6 +381,127 @@ export const SpecializedExerciseView: React.FC<SpecializedExerciseViewProps> = (
           </div>
         </div>
       </div>
+
+      {[ExerciseType.ARTICULATION, ExerciseType.PRONUNCIATION_DRILL, ExerciseType.VISUAL_PHONICS].includes(exercise.type) && (
+        <section aria-labelledby="articulation-pathway-title" className="rounded-3xl border border-indigo-200 bg-white p-5 sm:p-7 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-indigo-700">Speech-sound practice</span>
+              <h4 id="articulation-pathway-title" className="text-xl font-black text-slate-900">Choose a sound and practice level</h4>
+              <p className="text-xs text-slate-500 mt-1">Use these bundled prompts in the order and at the pace chosen by your clinician. No automatic scoring or treatment plan is generated.</p>
+            </div>
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+              Target phoneme
+              <select
+                value={selectedDrillPhoneme}
+                onChange={(event) => {
+                  setSelectedDrillPhoneme(event.target.value);
+                  setDrillWordIndex(0);
+                  setDrillTrials(0);
+                  setDrillUsesBlends(false);
+                }}
+                className="rounded-xl border border-slate-300 bg-white px-3 py-2"
+                aria-label="Select target phoneme"
+              >
+                {drillPhonemes.map((phoneme) => <option key={phoneme} value={phoneme}>{phoneme}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Speech practice levels">
+            {DRILL_LEVELS.map((level) => (
+              <button
+                key={level}
+                type="button"
+                aria-pressed={drillLevel === level}
+                onClick={() => {
+                  setDrillLevel(level);
+                  setDrillWordIndex(0);
+                  setDrillTrials(0);
+                }}
+                className={`rounded-xl border px-3 py-2 text-xs font-bold ${drillLevel === level ? 'border-indigo-700 bg-indigo-700 text-white' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-indigo-50'}`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+
+          {drillLevel === 'Word' && (
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Word sound position">
+              {( ['Initial', 'Medial', 'Final'] as DrillPosition[]).map((position) => (
+                <button
+                  key={position}
+                  type="button"
+                  aria-pressed={!drillUsesBlends && drillPosition === position}
+                  onClick={() => {
+                    setDrillUsesBlends(false);
+                    setDrillPosition(position);
+                    setDrillWordIndex(0);
+                    setDrillTrials(0);
+                  }}
+                  className={`rounded-xl border px-3 py-2 text-xs font-bold ${!drillUsesBlends && drillPosition === position ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-slate-200 text-slate-700 hover:bg-emerald-50'}`}
+                >
+                  {position}
+                </button>
+              ))}
+              {!!drillProfile?.blends.length && (
+                <button
+                  type="button"
+                  aria-pressed={drillUsesBlends}
+                  onClick={() => {
+                    setDrillUsesBlends(true);
+                    setDrillWordIndex(0);
+                    setDrillTrials(0);
+                  }}
+                  className={`rounded-xl border px-3 py-2 text-xs font-bold ${drillUsesBlends ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-slate-200 text-slate-700 hover:bg-emerald-50'}`}
+                >
+                  Blends
+                </button>
+              )}
+            </div>
+          )}
+
+          <div className="rounded-2xl bg-indigo-50 p-5 text-center" aria-live="polite">
+            <p className="text-xs font-black uppercase tracking-widest text-indigo-700">
+              {drillLevel === 'Word' ? (drillUsesBlends ? 'Blend practice' : `${drillPosition} position`) : drillLevel}
+            </p>
+            <p className="my-2 text-3xl sm:text-4xl font-black text-slate-900">
+              {missingPositionSample ? `No bundled ${drillPosition.toLowerCase()} sample for ${selectedDrillPhoneme}` : drillPrompt}
+            </p>
+            {drillLevel === 'Word' && drillWords.length > 1 && (
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Previous practice word"
+                  onClick={() => setDrillWordIndex((index) => (index - 1 + drillWords.length) % drillWords.length)}
+                  className="rounded-lg p-2 text-indigo-800 hover:bg-indigo-100"
+                ><ChevronLeft className="h-5 w-5" /></button>
+                <span className="text-xs text-slate-600">{drillWordIndex + 1} of {drillWords.length}</span>
+                <button
+                  type="button"
+                  aria-label="Next practice word"
+                  onClick={() => setDrillWordIndex((index) => (index + 1) % drillWords.length)}
+                  className="rounded-lg p-2 text-indigo-800 hover:bg-indigo-100"
+                ><ChevronRight className="h-5 w-5" /></button>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              disabled={missingPositionSample}
+              onClick={() => speakText(drillPrompt, language)}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-700 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-50"
+            ><Volume2 className="h-4 w-4" />Hear prompt</button>
+            <button
+              type="button"
+              disabled={missingPositionSample}
+              onClick={() => setDrillTrials((count) => count + 1)}
+              className="rounded-xl border border-indigo-200 bg-white px-5 py-3 text-sm font-bold text-indigo-800 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >Record clinician-observed trial ({drillTrials})</button>
+          </div>
+        </section>
+      )}
 
       {/* Pronunciation Visualizer Integration */}
       {exercise.pronunciationGuide && (

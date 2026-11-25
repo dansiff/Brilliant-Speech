@@ -1,6 +1,7 @@
 import { StoryPage, Language, Difficulty } from "../types";
 import { handleError, ErrorType } from "../utils/errorHandler";
 import { extractJsonFromResponse } from "../utils/aiUtils";
+import { toast } from "sonner";
 
 export async function generateWordAudio(userId: string, word: string): Promise<string | undefined> {
   const localPath = `/sounds/words/${word.toLowerCase()}.mp3`;
@@ -60,7 +61,7 @@ function pcmToWav(pcmBase64: string, sampleRate: number = 24000): string {
   return URL.createObjectURL(blob);
 }
 
-async function generatePageImage(userId: string, text: string, topic: string): Promise<string> {
+async function generatePageImage(userId: string, text: string, topic: string): Promise<string | undefined> {
   try {
     const prompt = `A child-friendly, colorful, and simple illustration for a story page. Topic: ${topic} Scene: ${text} Style: Vibrant, clear, and engaging for kids. No text in the image.`;
 
@@ -70,27 +71,39 @@ async function generatePageImage(userId: string, text: string, topic: string): P
       body: JSON.stringify({ userId, prompt })
     });
 
-    if (!response.ok) return `https://picsum.photos/seed/${Math.random()}/600/400`;
+    if (!response.ok) throw new Error(`Story image request failed (${response.status}).`);
 
     const data = await response.json();
-    const part = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-    if (part?.inlineData) {
-      return `data:image/png;base64,${part.inlineData.data}`;
-    }
-    return `https://picsum.photos/seed/${Math.random()}/600/400`;
+    const part = data.candidates?.[0]?.content?.parts?.find((item: any) => item.inlineData?.data);
+    if (!part?.inlineData?.data) throw new Error('Story image response did not contain an image.');
+    return `data:image/png;base64,${part.inlineData.data}`;
   } catch (error) {
-    return `https://picsum.photos/seed/${Math.random()}/600/400`;
+    console.error('Story illustration generation failed; the local illustration will be used:', error);
+    return undefined;
   }
 }
 
 export async function enrichStoryWithImages(userId: string, story: StoryPage[], topic: string): Promise<StoryPage[]> {
-  return await Promise.all(
+  let localFallbackCount = 0;
+  const enrichedStory = await Promise.all(
     story.map(async (page) => {
-      if (page.imageUrl) return page;
+      if (page.imageUrl && !page.imageUrl.includes('picsum.photos')) return page;
+      if (page.imageUrl?.includes('picsum.photos')) {
+        localFallbackCount += 1;
+        return { ...page, imageUrl: undefined };
+      }
+
       const imageUrl = await generatePageImage(userId, page.text, topic);
+      if (!imageUrl) localFallbackCount += 1;
       return { ...page, imageUrl };
     })
   );
+
+  if (localFallbackCount > 0) {
+    toast.info(`Using built-in illustrations for ${localFallbackCount} story page${localFallbackCount === 1 ? '' : 's'}.`);
+  }
+
+  return enrichedStory;
 }
 
 export async function enrichStoryWithAudio(userId: string, story: StoryPage[]): Promise<StoryPage[]> {

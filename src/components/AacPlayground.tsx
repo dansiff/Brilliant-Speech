@@ -25,8 +25,8 @@ import {
   Heart,
   GripVertical
 } from 'lucide-react';
-import { speakText } from '../utils/speechUtils';
 import { Language } from '../types';
+import { toast } from 'sonner';
 
 interface PecsCard {
   id: string;
@@ -58,6 +58,15 @@ const DEFAULT_CARDS: PecsCard[] = [
   { id: 'core-please', label: 'Please', spanishLabel: 'Por favor', emoji: '🙏', category: 'core' },
   { id: 'core-thanks', label: 'Thank you', spanishLabel: 'Gracias', emoji: '💖', category: 'core' },
   { id: 'core-more', label: 'More', spanishLabel: 'Más', emoji: '➕', category: 'core' },
+  { id: 'core-not', label: 'Not', spanishLabel: 'No', emoji: '🚫', category: 'core' },
+  { id: 'core-need', label: 'Need', spanishLabel: 'Necesito', emoji: '🙋', category: 'core' },
+  { id: 'core-like', label: 'Like', spanishLabel: 'Me gusta', emoji: '👍', category: 'core' },
+  { id: 'core-finish', label: 'Finished', spanishLabel: 'Terminé', emoji: '🏁', category: 'core' },
+  { id: 'core-wait', label: 'Wait', spanishLabel: 'Espera', emoji: '✋', category: 'core' },
+  { id: 'core-again', label: 'Again', spanishLabel: 'Otra vez', emoji: '🔁', category: 'core' },
+  { id: 'core-different', label: 'Different', spanishLabel: 'Diferente', emoji: '🔀', category: 'core' },
+  { id: 'core-my-turn', label: 'My turn', spanishLabel: 'Mi turno', emoji: '🙋‍♀️', category: 'core' },
+  { id: 'core-your-turn', label: 'Your turn', spanishLabel: 'Tu turno', emoji: '👉', category: 'core' },
 
   // Actions
   { id: 'act-eat', label: 'Eat', spanishLabel: 'Comer', emoji: '🍕', category: 'actions' },
@@ -68,6 +77,8 @@ const DEFAULT_CARDS: PecsCard[] = [
   { id: 'act-wash', label: 'Wash', spanishLabel: 'Lavar', emoji: '🧼', category: 'actions' },
   { id: 'act-sleep', label: 'Sleep', spanishLabel: 'Dormir', emoji: '💤', category: 'actions' },
   { id: 'act-look', label: 'Look', spanishLabel: 'Mirar', emoji: '👀', category: 'actions' },
+  { id: 'act-read', label: 'Read', spanishLabel: 'Leer', emoji: '📚', category: 'actions' },
+  { id: 'act-listen', label: 'Listen', spanishLabel: 'Escuchar', emoji: '👂', category: 'actions' },
 
   // Food & Drinks
   { id: 'food-water', label: 'Water', spanishLabel: 'Agua', emoji: '💧', category: 'food' },
@@ -87,6 +98,7 @@ const DEFAULT_CARDS: PecsCard[] = [
   { id: 'feel-scared', label: 'Scared', spanishLabel: 'Asustado', emoji: '😨', category: 'feelings' },
   { id: 'feel-excited', label: 'Excited', spanishLabel: 'Emocionado', emoji: '🤩', category: 'feelings' },
   { id: 'feel-hurt', label: 'Hurt', spanishLabel: 'Con dolor', emoji: '🤕', category: 'feelings' },
+  { id: 'feel-sick', label: 'Sick', spanishLabel: 'Enfermo', emoji: '🤒', category: 'feelings' },
 
   // Places & Toys
   { id: 'place-park', label: 'Park', spanishLabel: 'Parque', emoji: '🛝', category: 'places' },
@@ -103,7 +115,8 @@ const DEFAULT_CARDS: PecsCard[] = [
   { id: 'peo-teacher', label: 'Teacher', spanishLabel: 'Maestra', emoji: '👩‍🏫', category: 'people' },
   { id: 'peo-friend', label: 'Friend', spanishLabel: 'Amigo', emoji: '👦', category: 'people' },
   { id: 'peo-me', label: 'Me', spanishLabel: 'Yo', emoji: '🧒', category: 'people' },
-  { id: 'peo-doctor', label: 'Doctor', spanishLabel: 'Doctor', emoji: '👨‍⚕️', category: 'people' }
+  { id: 'peo-doctor', label: 'Doctor', spanishLabel: 'Doctor', emoji: '👨‍⚕️', category: 'people' },
+  { id: 'place-bathroom', label: 'Bathroom', spanishLabel: 'Baño', emoji: '🚻', category: 'places' }
 ];
 
 const TEMPLATES = [
@@ -141,6 +154,45 @@ interface FavoritePhrase {
   cards: PecsCard[];
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isPecsCard = (value: unknown): value is PecsCard =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.label === 'string' &&
+  typeof value.spanishLabel === 'string' &&
+  typeof value.emoji === 'string' &&
+  ['core', 'actions', 'food', 'feelings', 'places', 'people'].includes(String(value.category)) &&
+  (value.isCustom === undefined || typeof value.isCustom === 'boolean');
+
+const isFavoritePhrase = (value: unknown): value is FavoritePhrase =>
+  isRecord(value) &&
+  typeof value.id === 'string' &&
+  typeof value.name === 'string' &&
+  typeof value.spanishName === 'string' &&
+  Array.isArray(value.cards) &&
+  value.cards.every(isPecsCard);
+
+const parseStoredArray = <T,>(serialized: string, isItem: (value: unknown) => value is T): T[] => {
+  const parsed: unknown = JSON.parse(serialized);
+  if (!Array.isArray(parsed)) throw new Error('Stored AAC data is not a list.');
+  const items = parsed.filter(isItem);
+  if (items.length !== parsed.length) throw new Error('Stored AAC data contains invalid items.');
+  return items;
+};
+
+const persistAacValue = (key: string, value: unknown, label: string): boolean => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    console.error(`Failed to save AAC ${label}:`, error);
+    toast.error(`${label} could not be saved on this device.`);
+    return false;
+  }
+};
+
 export const AacPlayground: React.FC = () => {
   // Config & State
   const [lang, setLang] = useState<Language>(Language.ENGLISH);
@@ -170,64 +222,65 @@ export const AacPlayground: React.FC = () => {
   // Speech settings
   const [speechRate, setSpeechRate] = useState(0.85);
   const [speechPitch, setSpeechPitch] = useState(1.15);
+  const [gridColumns, setGridColumns] = useState(4);
+  const [showPictures, setShowPictures] = useState(true);
 
   // Success indicator
   const [showCelebration, setShowCelebration] = useState(false);
 
   // Load custom cards & favorites from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('brilliant_speech_custom_pecs');
-    if (saved) {
-      try {
-        setCustomCards(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed parsing custom PECS cards", e);
-      }
+    try {
+      const saved = localStorage.getItem('brilliant_speech_custom_pecs');
+      if (saved) setCustomCards(parseStoredArray(saved, isPecsCard));
+    } catch (error) {
+      console.error('Failed to load custom AAC cards:', error);
+      toast.error('Custom AAC cards could not be loaded from this device.');
     }
 
-    const savedFavs = localStorage.getItem('brilliant_speech_favorite_phrases');
-    if (savedFavs) {
-      try {
-        setFavorites(JSON.parse(savedFavs));
-      } catch (e) {
-        console.error("Failed parsing favorite phrases", e);
+    try {
+      const savedFavs = localStorage.getItem('brilliant_speech_favorite_phrases');
+      if (savedFavs) {
+        setFavorites(parseStoredArray(savedFavs, isFavoritePhrase));
+      } else {
+        const initialFavs: FavoritePhrase[] = [
+          {
+            id: 'fav-1',
+            name: 'I want cookie 🍪',
+            spanishName: 'Quiero galleta 🍪',
+            cards: [
+              { id: 'core-i', label: 'I', spanishLabel: 'Yo', emoji: '🙋‍♂️', category: 'core' },
+              { id: 'core-want', label: 'Want', spanishLabel: 'Quiero', emoji: '❤️', category: 'core' },
+              { id: 'food-cookie', label: 'Cookie', spanishLabel: 'Galleta', emoji: '🍪', category: 'food' }
+            ]
+          },
+          {
+            id: 'fav-2',
+            name: 'Help please 🆘',
+            spanishName: 'Ayuda por favor 🆘',
+            cards: [
+              { id: 'core-help', label: 'Help', spanishLabel: 'Ayuda', emoji: '🆘', category: 'core' },
+              { id: 'core-please', label: 'Please', spanishLabel: 'Por favor', emoji: '🙏', category: 'core' }
+            ]
+          },
+          {
+            id: 'fav-3',
+            name: 'I want play park 🛝',
+            spanishName: 'Quiero jugar parque 🛝',
+            cards: [
+              { id: 'core-i', label: 'I', spanishLabel: 'Yo', emoji: '🙋‍♂️', category: 'core' },
+              { id: 'core-want', label: 'Want', spanishLabel: 'Quiero', emoji: '❤️', category: 'core' },
+              { id: 'act-play', label: 'Play', spanishLabel: 'Jugar', emoji: '🧸', category: 'actions' },
+              { id: 'place-park', label: 'Park', spanishLabel: 'Parque', emoji: '🛝', category: 'places' }
+            ]
+          }
+        ];
+        setFavorites(initialFavs);
+        persistAacValue('brilliant_speech_favorite_phrases', initialFavs, 'favorite phrases');
       }
-    } else {
-      // Default initial favorite phrases for warm user onboarding!
-      const initialFavs: FavoritePhrase[] = [
-        {
-          id: 'fav-1',
-          name: 'I want cookie 🍪',
-          spanishName: 'Quiero galleta 🍪',
-          cards: [
-            { id: 'core-i', label: 'I', spanishLabel: 'Yo', emoji: '🙋‍♂️', category: 'core' },
-            { id: 'core-want', label: 'Want', spanishLabel: 'Quiero', emoji: '❤️', category: 'core' },
-            { id: 'food-cookie', label: 'Cookie', spanishLabel: 'Galleta', emoji: '🍪', category: 'food' }
-          ]
-        },
-        {
-          id: 'fav-2',
-          name: 'Help please 🆘',
-          spanishName: 'Ayuda por favor 🆘',
-          cards: [
-            { id: 'core-help', label: 'Help', spanishLabel: 'Ayuda', emoji: '🆘', category: 'core' },
-            { id: 'core-please', label: 'Please', spanishLabel: 'Por favor', emoji: '🙏', category: 'core' }
-          ]
-        },
-        {
-          id: 'fav-3',
-          name: 'I want play park 🛝',
-          spanishName: 'Quiero jugar parque 🛝',
-          cards: [
-            { id: 'core-i', label: 'I', spanishLabel: 'Yo', emoji: '🙋‍♂️', category: 'core' },
-            { id: 'core-want', label: 'Want', spanishLabel: 'Quiero', emoji: '❤️', category: 'core' },
-            { id: 'act-play', label: 'Play', spanishLabel: 'Jugar', emoji: '🧸', category: 'actions' },
-            { id: 'place-park', label: 'Park', spanishLabel: 'Parque', emoji: '🛝', category: 'places' }
-          ]
-        }
-      ];
-      setFavorites(initialFavs);
-      localStorage.setItem('brilliant_speech_favorite_phrases', JSON.stringify(initialFavs));
+    } catch (error) {
+      console.error('Failed to load favorite AAC phrases:', error);
+      toast.error('Favorite AAC phrases could not be loaded from this device.');
     }
   }, []);
 
@@ -375,8 +428,8 @@ export const AacPlayground: React.FC = () => {
     };
     
     const updated = [newFav, ...favorites];
+    if (!persistAacValue('brilliant_speech_favorite_phrases', updated, 'favorite phrases')) return;
     setFavorites(updated);
-    localStorage.setItem('brilliant_speech_favorite_phrases', JSON.stringify(updated));
     setFavoriteNameInput('');
     setIsSavingFavorite(false);
     
@@ -392,8 +445,8 @@ export const AacPlayground: React.FC = () => {
   const handleDeleteFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const updated = favorites.filter(f => f.id !== id);
+    if (!persistAacValue('brilliant_speech_favorite_phrases', updated, 'favorite phrases')) return;
     setFavorites(updated);
-    localStorage.setItem('brilliant_speech_favorite_phrases', JSON.stringify(updated));
   };
 
   const handleLoadFavorite = (fav: FavoritePhrase) => {
@@ -402,9 +455,10 @@ export const AacPlayground: React.FC = () => {
     speakWithSettings(text);
   };
 
-  const saveCustomCards = (updated: PecsCard[]) => {
+  const saveCustomCards = (updated: PecsCard[]): boolean => {
+    if (!persistAacValue('brilliant_speech_custom_pecs', updated, 'custom vocabulary')) return false;
     setCustomCards(updated);
-    localStorage.setItem('brilliant_speech_custom_pecs', JSON.stringify(updated));
+    return true;
   };
 
   const allCards = [...DEFAULT_CARDS, ...customCards];
@@ -431,32 +485,41 @@ export const AacPlayground: React.FC = () => {
 
   // Custom speaker with local playground configurations
   const speakWithSettings = (text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-    
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const langCode = lang === Language.SPANISH ? 'es-ES' : 'en-US';
-    utterance.lang = langCode;
-
-    const voices = window.speechSynthesis.getVoices();
-    const femaleKeywords = ['female', 'samantha', 'victoria', 'monica', 'google us english', 'google español', 'helena', 'zira', 'karen'];
-    const femaleVoice = voices.find(v => {
-      const name = v.name.toLowerCase();
-      const code = v.lang.toLowerCase();
-      return code.startsWith(langCode.split('-')[0]) && 
-             femaleKeywords.some(keyword => name.includes(keyword));
-    });
-
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
-    } else {
-      const fallbackVoice = voices.find(v => v.lang.startsWith(langCode.split('-')[0]));
-      if (fallbackVoice) utterance.voice = fallbackVoice;
+    if (typeof window === 'undefined' || typeof window.speechSynthesis === 'undefined') {
+      toast.error('Text-to-speech is not available in this browser.');
+      return;
     }
 
-    utterance.rate = speechRate;
-    utterance.pitch = speechPitch;
-    window.speechSynthesis.speak(utterance);
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      const langCode = lang === Language.SPANISH ? 'es-ES' : 'en-US';
+      utterance.lang = langCode;
+
+      const voices = window.speechSynthesis.getVoices();
+      const femaleKeywords = ['female', 'samantha', 'victoria', 'monica', 'google us english', 'google español', 'helena', 'zira', 'karen'];
+      const femaleVoice = voices.find(v => {
+        const name = v.name.toLowerCase();
+        const code = v.lang.toLowerCase();
+        return code.startsWith(langCode.split('-')[0]) &&
+          femaleKeywords.some(keyword => name.includes(keyword));
+      });
+
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      } else {
+        const fallbackVoice = voices.find(v => v.lang.startsWith(langCode.split('-')[0]));
+        if (fallbackVoice) utterance.voice = fallbackVoice;
+      }
+
+      utterance.rate = speechRate;
+      utterance.pitch = speechPitch;
+      utterance.onerror = () => toast.error('The browser could not speak this AAC message.');
+      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error('Failed to speak AAC message:', error);
+      toast.error('The browser could not speak this AAC message.');
+    }
   };
 
   // Speaks the whole accumulated sentence
@@ -508,7 +571,7 @@ export const AacPlayground: React.FC = () => {
       isCustom: true
     };
 
-    saveCustomCards([...customCards, newCard]);
+    if (!saveCustomCards([...customCards, newCard])) return;
     setNewCardLabel('');
     setNewCardSpanishLabel('');
     setNewCardEmoji('🌟');
@@ -519,7 +582,7 @@ export const AacPlayground: React.FC = () => {
   const handleDeleteCustomCard = (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Avoid triggering card speech
     const updated = customCards.filter(c => c.id !== id);
-    saveCustomCards(updated);
+    if (!saveCustomCards(updated)) return;
     
     // Remove from active sentence if present
     setSentence(prev => prev.filter(c => c.id !== id));
@@ -586,9 +649,9 @@ export const AacPlayground: React.FC = () => {
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             <span className="text-xs font-black uppercase tracking-wider text-slate-400">
-              {lang === Language.ENGLISH ? 'Expressive Sentence Builder' : 'Constructor de Frases Expresivo'}
+              {lang === Language.ENGLISH ? 'Communication sentence builder' : 'Constructor de frases para comunicar'}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -609,6 +672,12 @@ export const AacPlayground: React.FC = () => {
             </button>
           </div>
         </div>
+
+        <p className="text-xs text-slate-600 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
+          {lang === Language.ENGLISH
+            ? 'Board, custom vocabulary, and picture cues are stored on this device. They work offline after this page loads; speech depends on an installed browser voice.'
+            : 'El tablero, vocabulario personalizado e imágenes se guardan en este dispositivo. Funcionan sin conexión después de cargar esta página; la voz depende de las voces instaladas en el navegador.'}
+        </p>
 
         {/* The accumulated PECS tiles row */}
         <div 
@@ -968,7 +1037,7 @@ export const AacPlayground: React.FC = () => {
             </div>
 
             {/* Config & Action */}
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
               
               {/* Add Custom Button */}
               <button
@@ -982,7 +1051,7 @@ export const AacPlayground: React.FC = () => {
 
               {/* Quick info popup */}
               <div className="text-[10px] bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl text-slate-500 font-semibold hidden sm:block">
-                💡 {lang === Language.ENGLISH ? 'Double-click to hear single word' : 'Doble toque para escuchar palabra suelta'}
+                💡 {lang === Language.ENGLISH ? 'Tap to add · speak sentence with button' : 'Toca para agregar · reproduce la frase con el botón'}
               </div>
 
             </div>
@@ -1086,6 +1155,24 @@ export const AacPlayground: React.FC = () => {
 
           {/* THE PECS GRID BOARD */}
           <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 shadow-sm space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <h4 className="text-sm font-black text-slate-800">{lang === Language.ENGLISH ? 'Picture & word board' : 'Tablero de imágenes y palabras'}</h4>
+                <p className="text-xs text-slate-500">{lang === Language.ENGLISH ? 'Use pictures, words, or both. Add your own bilingual cards.' : 'Usa imágenes, palabras o ambos. Agrega tus propias tarjetas bilingües.'}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                  <input type="checkbox" checked={showPictures} onChange={event => setShowPictures(event.target.checked)} className="accent-indigo-600" />
+                  {lang === Language.ENGLISH ? 'Show picture cues' : 'Mostrar imágenes'}
+                </label>
+                <div className="flex items-center gap-2" aria-label={lang === Language.ENGLISH ? 'Board columns' : 'Columnas del tablero'}>
+                  <span className="text-xs font-bold text-slate-600">{lang === Language.ENGLISH ? 'Columns' : 'Columnas'}</span>
+                  {[2, 3, 4, 5, 6].map(columns => (
+                    <button key={columns} type="button" aria-pressed={gridColumns === columns} onClick={() => setGridColumns(columns)} className={`w-8 h-8 rounded-lg text-xs font-bold ${gridColumns === columns ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{columns}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
             
             {filteredCards.length === 0 ? (
               <div className="py-12 text-center text-slate-400 font-bold text-xs space-y-1">
@@ -1098,7 +1185,7 @@ export const AacPlayground: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3.5">
+              <div className="grid gap-3.5" style={{ gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))` }}>
                 {filteredCards.map(card => {
                   const theme = getCategoryTheme(card.category);
                   return (
@@ -1108,7 +1195,15 @@ export const AacPlayground: React.FC = () => {
                       onDragStart={(e) => handleDragStartFromGrid(e, card)}
                       onDragEnd={handleDragEnd}
                       onClick={() => handleCardClick(card)}
-                      onDoubleClick={() => speakWithSettings(lang === Language.ENGLISH ? card.label : card.spanishLabel)}
+                      onKeyDown={event => {
+                        if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                          event.preventDefault();
+                          handleCardClick(card);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${lang === Language.ENGLISH ? card.label : card.spanishLabel}${card.isCustom ? '' : `, ${card.category}`}. ${lang === Language.ENGLISH ? 'Add to sentence' : 'Agregar a la frase'}`}
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                       className={`relative flex flex-col items-center justify-between p-4.5 rounded-[1.5rem] border-2 cursor-pointer shadow-sm select-none text-center ${theme.bg} min-h-32 transition-all cursor-grab active:cursor-grabbing hover:shadow-md`}
@@ -1131,7 +1226,7 @@ export const AacPlayground: React.FC = () => {
                       </span>
 
                       {/* Large Emojis */}
-                      <span className="text-4xl my-2.5">{card.emoji}</span>
+                      {showPictures && <span aria-hidden="true" className="text-4xl my-2.5">{card.emoji}</span>}
 
                       {/* Main Label */}
                       <span className="text-xs font-black tracking-tight leading-tight uppercase">

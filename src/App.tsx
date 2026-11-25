@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { Toaster, toast } from 'sonner';
 import { 
@@ -61,7 +61,6 @@ import {
   Compass,
   Sliders
 } from 'lucide-react';
-// Lazy loaded below
 import { 
   Language, 
   ExerciseType, 
@@ -97,79 +96,64 @@ import { ACHIEVEMENTS } from './achievements';
 import { EXERCISES } from './constants';
 import { generateLocalFeedback, pseudoAnalyze } from './utils/localSpeechEngine';
 import { notificationService } from './services/notificationService';
-import confetti from 'canvas-confetti';
 import { speakText } from './utils/speechUtils';
-import jsPDF from 'jspdf';
-// Views lazy loaded below
-import 'jspdf-autotable';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  BarChart, 
-  CartesianGrid, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  Area, 
-  Bar,
-  Line,
-  ComposedChart,
-  Legend
-} from 'recharts';
-
-import { FALLBACK_IMAGE, FALLBACK_AVATAR } from './constants';
+import { FALLBACK_AVATAR } from './constants';
 import { extractJsonFromResponse } from './utils/aiUtils';
 import { LAYOUT_CONFIG } from './layoutConfig';
 import { useOnlineStatus } from './utils/useOnlineStatus';
 
-import { SensoryTools } from './components/SensoryTools';
-import { ArticulationMatchingGame } from './components/ArticulationMatchingGame';
 import { ExerciseIllustration } from './components/ExerciseIllustration';
-import { SpecializedExerciseView } from './components/SpecializedExerciseView';
-import { LessonBuilder } from './components/LessonBuilder';
-import { LessonPlayer } from './components/LessonPlayer';
-import { SettingsView } from './components/SettingsView';
-import { InstagramEmbed } from './components/InstagramEmbed';
-import { LessonListView } from './components/LessonListView';
-import { ProUpgradeModal } from './components/ProUpgradeModal';
 import { VisualBuilder } from './components/admin/VisualBuilder';
-import { ClinicalProgressConsole } from './components/ClinicalProgressConsole';
-import { AdminBuilder } from './components/AdminBuilder';
 import { AdminCMS } from './components/AdminCMS';
-import { StandaloneAdminPortal } from './components/admin/StandaloneAdminPortal';
-import { MarketplaceView } from './components/MarketplaceView';
-import { BilingualMatchingGame } from './components/BilingualMatchingGame';
-import { PrivacyPolicyView } from './components/PrivacyPolicyView';
-import { InteractivePacingBoard } from './components/InteractivePacingBoard';
-import { LanguageModules } from './components/LanguageModules';
-import { VoiceOnsetDecibelMeter } from './components/VoiceOnsetDecibelMeter';
-import { AacPlayground } from './components/AacPlayground';
-import { ClinicalEvidencePanel } from './components/ClinicalEvidencePanel';
-import { ClinicalEvidenceGuide } from './components/ClinicalEvidenceGuide';
-import { ClinicalDiagnosticConsole } from './components/ClinicalDiagnosticConsole';
-import { SpeechPipelineFeedback } from './components/SpeechPipelineFeedback';
-import { PrivacyGovernanceHub } from './components/PrivacyGovernanceHub';
-import { RecordingConsentModal } from './components/RecordingConsentModal';
 import { privacyGovernanceService } from './services/privacyGovernanceService';
 import { sttService, SpeechProviderType } from './services/sttService';
 import { clinicalEngine, StructuredAttemptResult } from './services/clinicalEngine';
 import { audioService } from './services/audioService';
-import { SoundLadderGame } from './components/SoundLadderGame';
-import { ContrastEngineView } from './components/ContrastEngineView';
-import { FluencyPacingLab } from './components/FluencyPacingLab';
-import { VocalTherapyLab } from './components/VocalTherapyLab';
-import { SceneAacBoards } from './components/SceneAacBoards';
-import { ParentCoachingPortal } from './components/ParentCoachingPortal';
-import { ClinicalResearchAnalytics } from './components/ClinicalResearchAnalytics';
 import { OfflineSyncBanner } from './components/OfflineSyncBanner';
-import { MotorSpeechStudio } from './components/MotorSpeechStudio';
-import { ReceptiveLanguageArena } from './components/ReceptiveLanguageArena';
-import { ArticulatorAnatomyVisualizer } from './components/ArticulatorAnatomyVisualizer';
-import { MicrophoneDiagnosticModal } from './components/MicrophoneDiagnosticModal';
-import { QuickSearchCommandModal } from './components/QuickSearchCommandModal';
-import { NavigationCustomizerModal } from './components/NavigationCustomizerModal';
 import { navPreferencesService, PRESET_CONFIGS, ExperiencePreset } from './services/navigationPreferencesService';
 import { sfx } from './utils/soundEffects';
+
+const ProUpgradeModal = lazy(() => import('./components/ProUpgradeModal').then(module => ({ default: module.ProUpgradeModal })));
+const ClinicalEvidencePanel = lazy(() => import('./components/ClinicalEvidencePanel').then(module => ({ default: module.ClinicalEvidencePanel })));
+const ClinicalEvidenceGuide = lazy(() => import('./components/ClinicalEvidenceGuide').then(module => ({ default: module.ClinicalEvidenceGuide })));
+const ClinicalDiagnosticConsole = lazy(() => import('./components/ClinicalDiagnosticConsole').then(module => ({ default: module.ClinicalDiagnosticConsole })));
+const SpeechPipelineFeedback = lazy(() => import('./components/SpeechPipelineFeedback').then(module => ({ default: module.SpeechPipelineFeedback })));
+const PrivacyGovernanceHub = lazy(() => import('./components/PrivacyGovernanceHub').then(module => ({ default: module.PrivacyGovernanceHub })));
+const RecordingConsentModal = lazy(() => import('./components/RecordingConsentModal').then(module => ({ default: module.RecordingConsentModal })));
+const PronunciationVisualizer = lazy(() => import('./components/PronunciationVisualizer').then(module => ({ default: module.PronunciationVisualizer })));
+const MicrophoneDiagnosticModal = lazy(() => import('./components/MicrophoneDiagnosticModal').then(module => ({ default: module.MicrophoneDiagnosticModal })));
+const QuickSearchCommandModal = lazy(() => import('./components/QuickSearchCommandModal').then(module => ({ default: module.QuickSearchCommandModal })));
+const NavigationCustomizerModal = lazy(() => import('./components/NavigationCustomizerModal').then(module => ({ default: module.NavigationCustomizerModal })));
+const SpecializedExerciseView = lazy(() => import('./components/SpecializedExerciseView').then(module => ({ default: module.SpecializedExerciseView })));
+const LessonBuilder = lazy(() => import('./components/LessonBuilder').then(module => ({ default: module.LessonBuilder })));
+const LessonPlayer = lazy(() => import('./components/LessonPlayer').then(module => ({ default: module.LessonPlayer })));
+const SettingsView = lazy(() => import('./components/SettingsView').then(module => ({ default: module.SettingsView })));
+const InstagramEmbed = lazy(() => import('./components/InstagramEmbed').then(module => ({ default: module.InstagramEmbed })));
+const LessonListView = lazy(() => import('./components/LessonListView').then(module => ({ default: module.LessonListView })));
+const ClinicalProgressConsole = lazy(() => import('./components/ClinicalProgressConsole').then(module => ({ default: module.ClinicalProgressConsole })));
+const AdminBuilder = lazy(() => import('./components/AdminBuilder').then(module => ({ default: module.AdminBuilder })));
+const StandaloneAdminPortal = lazy(() => import('./components/admin/StandaloneAdminPortal').then(module => ({ default: module.StandaloneAdminPortal })));
+const MarketplaceView = lazy(() => import('./components/MarketplaceView').then(module => ({ default: module.MarketplaceView })));
+const BilingualMatchingGame = lazy(() => import('./components/BilingualMatchingGame').then(module => ({ default: module.BilingualMatchingGame })));
+const PrivacyPolicyView = lazy(() => import('./components/PrivacyPolicyView').then(module => ({ default: module.PrivacyPolicyView })));
+const InteractivePacingBoard = lazy(() => import('./components/InteractivePacingBoard').then(module => ({ default: module.InteractivePacingBoard })));
+const LanguageModules = lazy(() => import('./components/LanguageModules').then(module => ({ default: module.LanguageModules })));
+const VoiceOnsetDecibelMeter = lazy(() => import('./components/VoiceOnsetDecibelMeter').then(module => ({ default: module.VoiceOnsetDecibelMeter })));
+const AacPlayground = lazy(() => import('./components/AacPlayground').then(module => ({ default: module.AacPlayground })));
+const SoundLadderGame = lazy(() => import('./components/SoundLadderGame').then(module => ({ default: module.SoundLadderGame })));
+const ContrastEngineView = lazy(() => import('./components/ContrastEngineView').then(module => ({ default: module.ContrastEngineView })));
+const FluencyPacingLab = lazy(() => import('./components/FluencyPacingLab').then(module => ({ default: module.FluencyPacingLab })));
+const VocalTherapyLab = lazy(() => import('./components/VocalTherapyLab').then(module => ({ default: module.VocalTherapyLab })));
+const SceneAacBoards = lazy(() => import('./components/SceneAacBoards').then(module => ({ default: module.SceneAacBoards })));
+const ParentCoachingPortal = lazy(() => import('./components/ParentCoachingPortal').then(module => ({ default: module.ParentCoachingPortal })));
+const ClinicalResearchAnalytics = lazy(() => import('./components/ClinicalResearchAnalytics').then(module => ({ default: module.ClinicalResearchAnalytics })));
+const MotorSpeechStudio = lazy(() => import('./components/MotorSpeechStudio').then(module => ({ default: module.MotorSpeechStudio })));
+const ReceptiveLanguageArena = lazy(() => import('./components/ReceptiveLanguageArena').then(module => ({ default: module.ReceptiveLanguageArena })));
+const SocialCommunicationStudio = lazy(() => import('./components/SocialCommunicationStudio').then(module => ({ default: module.SocialCommunicationStudio })));
+const AdultSpeechRehabStudio = lazy(() => import('./components/AdultSpeechRehabStudio').then(module => ({ default: module.AdultSpeechRehabStudio })));
+const ArticulatorAnatomyVisualizer = lazy(() => import('./components/ArticulatorAnatomyVisualizer').then(module => ({ default: module.ArticulatorAnatomyVisualizer })));
+const SensoryTools = lazy(() => import('./components/SensoryTools').then(module => ({ default: module.SensoryTools })));
+const ArticulationMatchingGame = lazy(() => import('./components/ArticulationMatchingGame').then(module => ({ default: module.ArticulationMatchingGame })));
 
 const MOBILE_NAV_LINKS = [
   { label: 'Practice', view: 'practice' },
@@ -183,12 +167,13 @@ const MOBILE_NAV_LINKS = [
   { label: 'Fluency Lab', view: 'fluency-lab' },
   { label: 'Vocal Therapy', view: 'vocal-lab' },
   { label: 'Receptive Language', view: 'receptive-language' },
+  { label: 'Adult Speech Rehab', view: 'adult-rehab' },
   { label: 'Voice Tools', view: 'voice-meters' },
   { label: 'Pacing Board', view: 'pacing-board' },
   { label: 'AAC Playground', view: 'aac-playground' },
   { label: 'Scene AAC', view: 'scene-aac' },
   { label: 'Sensory Tools', view: 'autism-tools' },
-  { label: 'Social Stories', view: 'focus-social' },
+  { label: 'Social Communication', view: 'focus-social' },
   { label: 'Language Modules', view: 'language-modules' },
   { label: 'Lessons', view: 'lessons' },
   { label: 'Videos', view: 'videos' },
@@ -208,6 +193,49 @@ const LoadingSpinner = () => (
     <p className="text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">Loading adventure...</p>
   </div>
 );
+
+const ProgressCharts = lazy(() =>
+  import('./components/ProgressCharts').then(({ ProgressCharts }) => ({ default: ProgressCharts }))
+);
+
+interface ImageWithExerciseFallbackProps {
+  imageUrl?: string;
+  word: string;
+  className: string;
+  illustrationClassName?: string;
+}
+
+function ImageWithExerciseFallback({
+  imageUrl,
+  word,
+  className,
+  illustrationClassName,
+}: ImageWithExerciseFallbackProps) {
+  const [imageError, setImageError] = useState(false);
+
+  if (!imageUrl || imageUrl.includes('picsum.photos') || imageError) {
+    return (
+      <ExerciseIllustration
+        word={word}
+        className={className}
+        illustrationClassName={illustrationClassName}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={imageUrl}
+      alt={word}
+      className={className}
+      referrerPolicy="no-referrer"
+      onError={() => {
+        setImageError(true);
+        toast.info('Illustration unavailable; using built-in art instead.');
+      }}
+    />
+  );
+}
 
 import { requestWakeLock } from './utils/nativeBridge';
 
@@ -256,7 +284,7 @@ export default function App() {
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [isAutismAddonActive, setIsAutismAddonActive] = useState(false);
   const [isMentorMode, setIsMentorMode] = useState(false);
-  const [view, setView] = useState<'practice' | 'stories' | 'progress' | 'pricing' | 'settings' | 'autism-tools' | 'matching-game' | 'bilingual-match' | 'focus-social' | 'lessons' | 'videos' | 'admin-builder' | 'marketplace' | 'privacy-policy' | 'admin-cms' | 'pacing-board' | 'language-modules' | 'voice-meters' | 'aac-playground' | 'sound-ladder' | 'contrast-engine' | 'fluency-lab' | 'vocal-lab' | 'scene-aac' | 'parent-coaching' | 'clinical-research' | 'motor-speech' | 'receptive-language' | 'articulator-anatomy'>('practice');
+  const [view, setView] = useState<'practice' | 'stories' | 'progress' | 'pricing' | 'settings' | 'autism-tools' | 'matching-game' | 'bilingual-match' | 'focus-social' | 'lessons' | 'videos' | 'admin-builder' | 'marketplace' | 'privacy-policy' | 'admin-cms' | 'pacing-board' | 'language-modules' | 'voice-meters' | 'aac-playground' | 'sound-ladder' | 'contrast-engine' | 'fluency-lab' | 'vocal-lab' | 'scene-aac' | 'parent-coaching' | 'clinical-research' | 'motor-speech' | 'receptive-language' | 'adult-rehab' | 'articulator-anatomy'>('practice');
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [isMicDiagnosticOpen, setIsMicDiagnosticOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -329,7 +357,6 @@ export default function App() {
   const recordingStartTimeRef = useRef<number>(0);
   const [translatedStoryText, setTranslatedStoryText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [activeAnimation, setActiveAnimation] = useState<{ url: string; title: string } | null>(null);
   const [comboCount, setComboCount] = useState(0);
   const [mouthAnimKey, setMouthAnimKey] = useState(0);
   const [tongueAnimKey, setTongueAnimKey] = useState(0);
@@ -621,18 +648,16 @@ export default function App() {
 
   useEffect(() => {
     // Listen for Firestore exercises
-    // Only start if auth is ready to avoid "Access Denied" errors before login finish
-    if (!isAuthReady) return;
+    if (!isAuthReady || !auth.currentUser || auth.currentUser.uid !== user?.uid) return;
 
     const unsubscribe = onSnapshot(collection(db, 'exercises'), (snapshot) => {
       const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Exercise));
       setFirestoreExercises(fetched);
     }, (error) => {
-      // Graceful error if not logged in
-      console.warn("Exercises listener failed (expected if not logged in):", error);
+      console.error('Cloud exercises could not be loaded; built-in exercises remain available:', error);
     });
     return () => unsubscribe();
-  }, [isAuthReady]);
+  }, [isAuthReady, user?.uid]);
 
   useEffect(() => {
     // Listen for Marketplace items
@@ -1599,16 +1624,23 @@ export default function App() {
       const data = await response.json();
       const aiResponse = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
       
-      // Generate image
-      const imageResponse = await fetch('/api/ai/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.uid, prompt: aiResponse.imagePrompt })
-      });
-      
-      const imageData = await imageResponse.json();
-      const imagePart = imageData.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
-      const imageUrl = imagePart ? `data:image/png;base64,${imagePart.inlineData.data}` : `https://picsum.photos/seed/${newStruggleWord}/400/300`;
+      let imageUrl: string | undefined;
+      try {
+        const imageResponse = await fetch('/api/ai/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.uid, prompt: aiResponse.imagePrompt })
+        });
+        if (!imageResponse.ok) throw new Error(`Image request failed (${imageResponse.status}).`);
+
+        const imageData = await imageResponse.json();
+        const imagePart = imageData.candidates?.[0]?.content?.parts?.find((part: any) => part.inlineData?.data);
+        if (!imagePart?.inlineData?.data) throw new Error('Image response did not contain an image.');
+        imageUrl = `data:image/png;base64,${imagePart.inlineData.data}`;
+      } catch (error) {
+        console.error('Word illustration generation failed; the local illustration will be used:', error);
+        toast.info('Word added with a built-in illustration because generated art was unavailable.');
+      }
 
       const newWord: StruggleWord = {
         id: Math.random().toString(36).substr(2, 9),
@@ -1836,8 +1868,23 @@ export default function App() {
     playCue('chime');
   };
 
-  const generateReport = () => {
-    const doc = new jsPDF();
+  const generateReport = async () => {
+    let JsPdf: typeof import('jspdf').default;
+    let autoTable: typeof import('jspdf-autotable').default;
+    try {
+      const [pdfModule, autoTableModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+      JsPdf = pdfModule.default;
+      autoTable = autoTableModule.default;
+    } catch (error) {
+      console.error('Could not load the PDF report tools:', error);
+      toast.error('The progress report could not be loaded. Please try again.');
+      return;
+    }
+
+    const doc = new JsPdf();
     const profile = activeProfile;
     
     // Header
@@ -1854,7 +1901,7 @@ export default function App() {
     doc.setTextColor(0, 0, 0);
     doc.text('Summary Statistics', 14, 45);
     
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 50,
       head: [['Metric', 'Value']],
       body: [
@@ -1868,7 +1915,7 @@ export default function App() {
     // History Table
     if (profile?.history && profile.history.length > 0) {
       doc.text('Recent Session History', 14, (doc as any).lastAutoTable.finalY + 15);
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 20,
         head: [['Date', 'Average Score', 'Sessions']],
         body: profile.history.map((h: any) => [h.date, `${h.score}%`, h.sessions]),
@@ -1878,7 +1925,7 @@ export default function App() {
     // Struggle Words
     if (profile?.struggleWords && profile.struggleWords.length > 0) {
       doc.text('Current Struggle Words', 14, (doc as any).lastAutoTable.finalY + 15);
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: (doc as any).lastAutoTable.finalY + 20,
         head: [['Word', 'Added On', 'Status']],
         body: profile.struggleWords.map((w: any) => [
@@ -2788,12 +2835,16 @@ export default function App() {
 
               if (result.score >= 90) {
                 setComboCount(prev => prev + 1);
-                confetti({
-                  particleCount: 100,
-                  spread: 70,
-                  origin: { y: 0.6 },
-                  colors: ['#FFD700', '#FFA500', '#FF4500']
-                });
+                void import('canvas-confetti')
+                  .then(({ default: confetti }) => {
+                    confetti({
+                      particleCount: 100,
+                      spread: 70,
+                      origin: { y: 0.6 },
+                      colors: ['#FFD700', '#FFA500', '#FF4500']
+                    });
+                  })
+                  .catch(error => console.error('Could not load the celebration animation:', error));
               } else {
                 setComboCount(0);
               }
@@ -2932,128 +2983,6 @@ export default function App() {
         } ${sensoryProfile?.highContrast ? 'high-contrast' : ''}`}
         style={{ fontSize: sensoryProfile?.fontScale ? `${sensoryProfile.fontScale}rem` : undefined }}
       >
-      <AnimatePresence>
-        {activeAnimation && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md"
-            onClick={() => setActiveAnimation(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white rounded-[40px] p-8 max-w-2xl w-full shadow-2xl relative overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button 
-                onClick={() => setActiveAnimation(null)}
-                className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
-              >
-                <X className="w-6 h-6 text-slate-500" />
-              </button>
-              
-              <h3 className="text-2xl font-black mb-6 text-center">{activeAnimation.title}</h3>
-              
-              <div className="aspect-square rounded-3xl overflow-hidden border-4 border-slate-100 shadow-inner bg-slate-50 flex items-center justify-center">
-                {activeAnimation.url.toLowerCase().endsWith('.mp4') || activeAnimation.url.toLowerCase().endsWith('.webm') ? (
-                  <video 
-                    src={activeAnimation.url} 
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <img 
-                    src={activeAnimation.url} 
-                    alt={activeAnimation.title}
-                    className="w-full h-full object-contain"
-                    referrerPolicy="no-referrer"
-                  />
-                )}
-              </div>
-              
-              <div className="mt-8 flex flex-col items-center gap-4">
-                <p className="text-slate-500 text-sm font-medium text-center max-w-md">
-                  Watch carefully how the mouth and tongue move to make this sound!
-                </p>
-                <button
-                  onClick={() => setActiveAnimation(null)}
-                  className={`px-12 py-4 rounded-2xl text-white font-black uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95 ${styles.button}`}
-                >
-                  Got it!
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {activeAnimation && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md"
-            onClick={() => setActiveAnimation(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-white rounded-[40px] p-8 max-w-2xl w-full shadow-2xl relative overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button 
-                onClick={() => setActiveAnimation(null)}
-                className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
-              >
-                <X className="w-6 h-6 text-slate-500" />
-              </button>
-              
-              <h3 className="text-2xl font-black mb-6 text-center">{activeAnimation.title}</h3>
-              
-              <div className="aspect-square rounded-3xl overflow-hidden border-4 border-slate-100 shadow-inner bg-slate-50 flex items-center justify-center">
-                {activeAnimation.url.toLowerCase().endsWith('.mp4') || activeAnimation.url.toLowerCase().endsWith('.webm') ? (
-                  <video 
-                    src={activeAnimation.url} 
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <img 
-                    src={activeAnimation.url} 
-                    alt={activeAnimation.title}
-                    className="w-full h-full object-contain"
-                    referrerPolicy="no-referrer"
-                  />
-                )}
-              </div>
-              
-              <div className="mt-8 flex flex-col items-center gap-4">
-                <p className="text-slate-500 text-sm font-medium text-center max-w-md">
-                  Watch carefully how the mouth and tongue move to make this sound!
-                </p>
-                <button
-                  onClick={() => setActiveAnimation(null)}
-                  className={`px-12 py-4 rounded-2xl text-white font-black uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95 ${styles.button}`}
-                >
-                  Got it!
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <Toaster position="top-center" richColors />
       {/* Achievement Notification */}
       <AnimatePresence>
@@ -3562,7 +3491,7 @@ export default function App() {
                   )}
 
                   {/* Dropdown 3: Speech & Fluency Labs */}
-                  {(navPrefs.modules.motorSpeech || navPrefs.modules.fluencyLab || navPrefs.modules.vocalLab || navPrefs.modules.receptiveLanguage || navPrefs.modules.voiceMeters || navPrefs.modules.pacingBoard) && (
+                  {(navPrefs.modules.motorSpeech || navPrefs.modules.fluencyLab || navPrefs.modules.vocalLab || navPrefs.modules.receptiveLanguage || navPrefs.modules.voiceMeters || navPrefs.modules.pacingBoard || view === 'adult-rehab') && (
                     <div className="relative">
                       <button
                         onClick={() => {
@@ -3570,7 +3499,7 @@ export default function App() {
                           setActiveDropdown(activeDropdown === 'speech' ? null : 'speech');
                         }}
                         className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                          ['motor-speech', 'fluency-lab', 'vocal-lab', 'receptive-language', 'voice-meters', 'pacing-board'].includes(view)
+                          ['motor-speech', 'fluency-lab', 'vocal-lab', 'receptive-language', 'adult-rehab', 'voice-meters', 'pacing-board'].includes(view)
                             ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/60'
                             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
                         }`}
@@ -3665,6 +3594,23 @@ export default function App() {
                                   </div>
                                 </button>
                               )}
+
+                              <button
+                                onClick={() => {
+                                  sfx.playWhoosh();
+                                  setView('adult-rehab');
+                                  setActiveDropdown(null);
+                                }}
+                                className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl text-xs font-bold transition-all text-left ${
+                                  view === 'adult-rehab' ? 'bg-emerald-50 text-emerald-900' : 'text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                <span className="text-base">🧠</span>
+                                <div>
+                                  <span className="block font-black">Adult Speech Rehab</span>
+                                  <span className="text-[10px] text-slate-400 font-normal">Functional language & cognition</span>
+                                </div>
+                              </button>
 
                               {navPrefs.modules.voiceMeters && (
                                 <button
@@ -4262,6 +4208,7 @@ export default function App() {
 
       <main className={`flex-1 min-w-0 ${isFocusMode ? 'max-w-full' : LAYOUT_CONFIG.maxContainerWidth} mx-auto w-full ${LAYOUT_CONFIG.containerPadding} space-y-6`}>
         <OfflineSyncBanner onOpenSettings={() => setView('settings')} />
+        <Suspense fallback={<LoadingSpinner />}>
         <AnimatePresence mode="wait">
           {(view === 'practice' || view === 'stories') && (
             <motion.div 
@@ -4731,15 +4678,12 @@ export default function App() {
                                   className={`p-8 rounded-[40px] border-4 border-slate-100 shadow-xl bg-white cursor-grab active:cursor-grabbing touch-none`}
                                 >
                                   <div className="aspect-video rounded-2xl overflow-hidden mb-6 border-2 border-slate-50">
-                                    <img 
-                                      src={selectedExercise.story![currentStoryPage].imageUrl} 
-                                      alt="Story illustration" 
+                                    <ImageWithExerciseFallback
+                                      key={`${selectedExercise.id}-${currentStoryPage}`}
+                                      imageUrl={selectedExercise.story![currentStoryPage].imageUrl}
+                                      word={selectedExercise.story![currentStoryPage].interactiveWords?.[0]?.word || selectedExercise.targetWord || selectedExercise.title}
                                       className="w-full h-full object-cover"
-                                      referrerPolicy="no-referrer"
-                                      onError={(e) => {
-                                        e.currentTarget.onerror = null;
-                                        e.currentTarget.src = "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=1000"; // Calming story-like fallback
-                                      }}
+                                      illustrationClassName="text-8xl"
                                     />
                                   </div>
                                   <div className="space-y-6">
@@ -4967,105 +4911,14 @@ export default function App() {
                                       className="overflow-hidden"
                                     >
                                       <div className={`${theme === Theme.KID ? 'bg-blue-50' : 'bg-slate-50'} rounded-2xl p-4 text-left border border-slate-100 space-y-4`}>
-                                        <div className="grid grid-cols-2 gap-4">
-                                          {selectedExercise.pronunciationGuide.mouthAnimationUrl && (
-                                            <div className="space-y-1">
-                                              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                                                Mouth View
-                                                <span className="bg-red-500 text-white px-1 rounded-[2px] text-[8px] animate-pulse">ANIMATED</span>
-                                              </p>
-                                              <div 
-                                                onClick={() => setActiveAnimation({ 
-                                                  url: selectedExercise.pronunciationGuide!.mouthAnimationUrl!, 
-                                                  title: "Mouth Position" 
-                                                })}
-                                                className={`aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm relative group cursor-pointer ${theme === Theme.KID ? 'bg-blue-100' : 'bg-white'}`}
-                                              >
-                                                <motion.img 
-                                                  key={`mouth-${showGuide}`}
-                                                  initial={{ scale: 0.8, opacity: 0 }}
-                                                  animate={{ scale: 1, opacity: 1 }}
-                                                  transition={{ type: 'spring', duration: 0.8 }}
-                                                  src={selectedExercise.pronunciationGuide.mouthAnimationUrl} 
-                                                  alt="Mouth Position Animation" 
-                                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                  referrerPolicy="no-referrer"
-                                                />
-                                                <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                  <div className="bg-white/90 p-2 rounded-full shadow-lg">
-                                                    <Maximize2 className="w-5 h-5 text-primary" />
-                                                  </div>
-                                                </div>
-                                                <div className="absolute top-2 right-2">
-                                                  <button
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      playOrGenerateExerciseAudio(selectedExercise.pronunciationGuide!.mouthPosition, 'pronunciationGuide.mouthAudioUrl');
-                                                    }}
-                                                    className="p-1.5 bg-white/90 rounded-full shadow-sm hover:bg-white transition-colors"
-                                                  >
-                                                    <Volume2 className="w-3.5 h-3.5 text-primary" />
-                                                  </button>
-                                                </div>
-                                                <div className="absolute bottom-2 right-2">
-                                                  <motion.div 
-                                                    animate={{ scale: [1, 1.2, 1] }}
-                                                    transition={{ repeat: Infinity, duration: 2 }}
-                                                    className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"
-                                                  />
-                                                </div>
-                                              </div>
-                                            </div>
-                                          )}
-                                          {selectedExercise.pronunciationGuide.tongueAnimationUrl && (
-                                            <div className="space-y-1">
-                                              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                                                Tongue View
-                                                <span className="bg-red-500 text-white px-1 rounded-[2px] text-[8px] animate-pulse">ANIMATED</span>
-                                              </p>
-                                              <div 
-                                                onClick={() => setActiveAnimation({ 
-                                                  url: selectedExercise.pronunciationGuide!.tongueAnimationUrl!, 
-                                                  title: "Tongue Placement" 
-                                                })}
-                                                className={`aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm relative group cursor-pointer ${theme === Theme.KID ? 'bg-blue-100' : 'bg-white'}`}
-                                              >
-                                                <motion.img 
-                                                  key={`tongue-${showGuide}`}
-                                                  initial={{ scale: 0.8, opacity: 0 }}
-                                                  animate={{ scale: 1, opacity: 1 }}
-                                                  transition={{ type: 'spring', duration: 0.8, delay: 0.1 }}
-                                                  src={selectedExercise.pronunciationGuide.tongueAnimationUrl} 
-                                                  alt="Tongue Placement Animation" 
-                                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                  referrerPolicy="no-referrer"
-                                                />
-                                                <div className="absolute inset-0 bg-black/5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                  <div className="bg-white/90 p-2 rounded-full shadow-lg">
-                                                    <Maximize2 className="w-5 h-5 text-primary" />
-                                                  </div>
-                                                </div>
-                                                <div className="absolute top-2 right-2">
-                                                  <button
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      playOrGenerateExerciseAudio(selectedExercise.pronunciationGuide!.tonguePlacement, 'pronunciationGuide.tongueAudioUrl');
-                                                    }}
-                                                    className="p-1.5 bg-white/90 rounded-full shadow-sm hover:bg-white transition-colors"
-                                                  >
-                                                    <Volume2 className="w-3.5 h-3.5 text-primary" />
-                                                  </button>
-                                                </div>
-                                                <div className="absolute bottom-2 right-2">
-                                                  <motion.div 
-                                                    animate={{ scale: [1, 1.2, 1] }}
-                                                    transition={{ repeat: Infinity, duration: 2 }}
-                                                    className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"
-                                                  />
-                                                </div>
-                                              </div>
-                                            </div>
-                                          )}
+                                        <div className="rounded-xl border border-slate-200 bg-white/80 p-2">
+                                          <p className="mb-2 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
+                                            Simplified mouth and tongue placement
+                                          </p>
+                                          <PronunciationVisualizer
+                                            mouthPosition={selectedExercise.pronunciationGuide.mouthPosition}
+                                            tonguePlacement={selectedExercise.pronunciationGuide.tonguePlacement}
+                                          />
                                         </div>
                                         <div className="space-y-3 pt-2 border-t border-slate-200/50">
                                           <div>
@@ -5582,14 +5435,12 @@ export default function App() {
                                 className={`p-6 ${styles.card} relative group`}
                               >
                                 <div className="flex items-start gap-4">
-                                  {word.imageUrl && (
-                                    <img 
-                                      src={word.imageUrl} 
-                                      alt={word.word} 
-                                      className="w-16 h-16 rounded-xl object-cover shadow-md"
-                                      referrerPolicy="no-referrer"
-                                    />
-                                  )}
+                                  <ImageWithExerciseFallback
+                                    imageUrl={word.imageUrl}
+                                    word={word.word}
+                                    className="w-16 h-16 shrink-0 rounded-xl object-cover shadow-md"
+                                    illustrationClassName="text-3xl"
+                                  />
                                   <div className="flex-1">
                                     <h3 className="text-lg font-black uppercase tracking-tight mb-1">{word.word}</h3>
                                     <p className="text-xs text-slate-500 line-clamp-2">{word.definition}</p>
@@ -6008,6 +5859,18 @@ export default function App() {
             </motion.div>
           )}
 
+          {view === 'adult-rehab' && (
+            <motion.div
+              key="adult-rehab"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="max-w-6xl mx-auto py-6"
+            >
+              <AdultSpeechRehabStudio />
+            </motion.div>
+          )}
+
           {view === 'articulator-anatomy' && (
             <motion.div
               key="articulator-anatomy"
@@ -6033,6 +5896,7 @@ export default function App() {
               className="max-w-6xl mx-auto py-8 space-y-6"
             >
               <ClinicalEvidenceGuide activeView="focus-social" />
+              <SocialCommunicationStudio />
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Column: Specialized Categories */}
@@ -6468,138 +6332,12 @@ export default function App() {
               </div>
 
               {/* Charts Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className={`p-8 ${styles.card}`}>
-                  <div className="flex items-center justify-between mb-8">
-                    <div>
-                      <h3 className="text-xl font-black">Accuracy & Vocal Pitch Trend</h3>
-                      <p className="text-xs text-slate-500">Pronunciation score (%) and fundamental vocal pitch (F₀ Hz)</p>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs font-bold">
-                      <div className="flex items-center gap-1.5 text-indigo-600">
-                        <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                        Score %
-                      </div>
-                      <div className="flex items-center gap-1.5 text-emerald-600">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                        Pitch (Hz)
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={progressChartData}>
-                        <defs>
-                          <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis 
-                          dataKey="date" 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }}
-                          dy={10}
-                        />
-                        <YAxis 
-                          yAxisId="score"
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 12, fill: '#6366f1', fontWeight: 600 }}
-                          domain={[0, 100]}
-                          unit="%"
-                        />
-                        <YAxis 
-                          yAxisId="pitch"
-                          orientation="right"
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 12, fill: '#10b981', fontWeight: 600 }}
-                          domain={[100, 350]}
-                          unit="Hz"
-                        />
-                        <Tooltip 
-                          contentStyle={{ 
-                            borderRadius: '16px', 
-                            border: 'none', 
-                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                            fontWeight: 'bold'
-                          }}
-                        />
-                        <Area 
-                          yAxisId="score"
-                          type="monotone" 
-                          dataKey="score" 
-                          name="Accuracy Score"
-                          stroke="#6366f1" 
-                          strokeWidth={3}
-                          fillOpacity={1} 
-                          fill="url(#colorScore)" 
-                        />
-                        <Line 
-                          yAxisId="pitch"
-                          type="monotone" 
-                          dataKey="pitchHz" 
-                          name="Vocal Pitch (F₀)"
-                          stroke="#10b981" 
-                          strokeWidth={3.5}
-                          dot={{ r: 4, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }}
-                          activeDot={{ r: 7, fill: '#059669' }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className={`p-8 ${styles.card}`}>
-                  <div className="flex items-center justify-between mb-8">
-                    <div>
-                      <h3 className="text-xl font-black">Daily Sessions</h3>
-                      <p className="text-xs text-slate-500">Practice consistency across recent days</p>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
-                      <div className="w-3 h-3 rounded-full bg-secondary" />
-                      Count
-                    </div>
-                  </div>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={progressChartData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis 
-                          dataKey="date" 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }}
-                          dy={10}
-                        />
-                        <YAxis 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }}
-                        />
-                        <Tooltip 
-                          cursor={{ fill: '#f8fafc' }}
-                          contentStyle={{ 
-                            borderRadius: '16px', 
-                            border: 'none', 
-                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                            fontWeight: 'bold'
-                          }}
-                        />
-                        <Bar 
-                          dataKey="sessions" 
-                          fill="#f43f5e" 
-                          radius={[6, 6, 0, 0]} 
-                          barSize={32}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
+              <Suspense fallback={<div className={`p-8 ${styles.card}`} role="status">Loading progress charts...</div>}>
+                <ProgressCharts
+                  data={progressChartData}
+                  cardClassName={`p-8 ${styles.card}`}
+                />
+              </Suspense>
 
               {/* Best Recordings (Local Sound Library) */}
               <div className={`p-8 ${styles.card}`}>
@@ -6900,6 +6638,7 @@ export default function App() {
             </motion.div>
           )}
           </AnimatePresence>
+        </Suspense>
       </main>
 
       {/* Footer / Stats Bar */}
@@ -7252,6 +6991,8 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {showProModal && (
+      <Suspense fallback={null}>
       <ProUpgradeModal
         isOpen={showProModal}
         onClose={() => setShowProModal(false)}
@@ -7290,6 +7031,8 @@ export default function App() {
         isUpgrading={isUpgrading}
         styles={styles}
       />
+      </Suspense>
+      )}
 
       {/* Clinician Access Passcode Gate Modal */}
       <AnimatePresence>
@@ -7387,13 +7130,13 @@ export default function App() {
       </AnimatePresence>
 
       {/* Speech Pipeline & Clinical DSP Diagnostic Modal */}
-      <ClinicalDiagnosticConsole 
+      {showDiagnosticConsole && <Suspense fallback={null}><ClinicalDiagnosticConsole
         isOpen={showDiagnosticConsole} 
         onClose={() => setShowDiagnosticConsole(false)} 
-      />
+      /></Suspense>}
 
       {/* Privacy, Consent & Governance Hub */}
-      <PrivacyGovernanceHub
+      {showPrivacyGovernanceModal && <Suspense fallback={null}><PrivacyGovernanceHub
         isOpen={showPrivacyGovernanceModal}
         onClose={() => setShowPrivacyGovernanceModal(false)}
         userEmail={user?.email}
@@ -7405,10 +7148,10 @@ export default function App() {
           setActiveProfileId('default');
           toast.success("Account data erased in accordance with HIPAA / COPPA / GDPR regulations.");
         }}
-      />
+      /></Suspense>}
 
       {/* Recording Consent Dialog */}
-      <RecordingConsentModal
+      {showRecordingConsentModal && <Suspense fallback={null}><RecordingConsentModal
         isOpen={showRecordingConsentModal}
         onClose={() => setShowRecordingConsentModal(false)}
         onConsentGranted={() => {
@@ -7416,32 +7159,32 @@ export default function App() {
           toast.success("Voice recording consent recorded under HIPAA/COPPA. You can now practice speech exercises.");
         }}
         userEmail={user?.email}
-      />
+      /></Suspense>}
 
       {/* Universal Quick Search Command Palette (Ctrl+K) */}
-      <QuickSearchCommandModal
+      {isQuickSearchOpen && <Suspense fallback={null}><QuickSearchCommandModal
         isOpen={isQuickSearchOpen}
         onClose={() => setIsQuickSearchOpen(false)}
         onSelectView={(targetView) => {
           setView(targetView);
           setSelectedExercise(null);
         }}
-      />
+      /></Suspense>}
 
       {/* Microphone Hardware & Sensitivity Diagnostic Modal */}
-      <MicrophoneDiagnosticModal
+      {isMicDiagnosticOpen && <Suspense fallback={null}><MicrophoneDiagnosticModal
         isOpen={isMicDiagnosticOpen}
         onClose={() => setIsMicDiagnosticOpen(false)}
-      />
+      /></Suspense>}
 
       {/* Navigation & Experience Customizer Modal */}
-      <NavigationCustomizerModal
+      {isNavCustomizerOpen && <Suspense fallback={null}><NavigationCustomizerModal
         isOpen={isNavCustomizerOpen}
         onClose={() => setIsNavCustomizerOpen(false)}
         onPreferencesChanged={() => {
           setNavPrefs(navPreferencesService.loadPreferences());
         }}
-      />
+      /></Suspense>}
     </div>
     </MotionConfig>
   );

@@ -175,6 +175,136 @@ const PHONEME_PROFILES: PhonemeAnatomyProfile[] = [
     exemplarWords: ['Thumb', 'Think', 'Tooth', 'Bath']
   },
   {
+    symbol: '/ð/',
+    name: 'Voiced Interdental Fricative (TH)',
+    manner: 'Fricative',
+    place: 'Interdental',
+    isVoiced: true,
+    activeArticulators: ['Tongue Tip', 'Upper & Lower Teeth', 'Vocal Folds'],
+    lipShape: 'neutral',
+    tonguePosture: 'interdental',
+    velumState: 'elevated',
+    clinicalPrompt: 'Use a gentle tongue-to-teeth position and continuous airflow with voicing.',
+    exemplarWords: ['This', 'Mother', 'Breathe', 'Those']
+  },
+  {
+    symbol: '/t/',
+    name: 'Voiceless Alveolar Stop',
+    manner: 'Stop/Plosive',
+    place: 'Alveolar',
+    isVoiced: false,
+    activeArticulators: ['Tongue Tip', 'Alveolar Ridge'],
+    lipShape: 'neutral',
+    tonguePosture: 'alveolar_tip',
+    velumState: 'elevated',
+    clinicalPrompt: 'Briefly touch the tongue tip to the ridge behind the upper teeth, then release.',
+    exemplarWords: ['Toe', 'Table', 'Button', 'Hat']
+  },
+  {
+    symbol: '/d/',
+    name: 'Voiced Alveolar Stop',
+    manner: 'Stop/Plosive',
+    place: 'Alveolar',
+    isVoiced: true,
+    activeArticulators: ['Tongue Tip', 'Alveolar Ridge', 'Vocal Folds'],
+    lipShape: 'neutral',
+    tonguePosture: 'alveolar_tip',
+    velumState: 'elevated',
+    clinicalPrompt: 'Brief tongue-tip contact at the ridge with voicing.',
+    exemplarWords: ['Dog', 'Door', 'Ladder', 'Bed']
+  },
+  {
+    symbol: '/n/',
+    name: 'Voiced Alveolar Nasal',
+    manner: 'Nasal',
+    place: 'Alveolar',
+    isVoiced: true,
+    activeArticulators: ['Tongue Tip', 'Alveolar Ridge', 'Lowered Velum', 'Vocal Folds'],
+    lipShape: 'neutral',
+    tonguePosture: 'alveolar_tip',
+    velumState: 'lowered',
+    clinicalPrompt: 'Touch the tongue tip to the ridge while voiced air resonates through the nose.',
+    exemplarWords: ['Nose', 'Dinner', 'Sun', 'Net']
+  },
+  {
+    symbol: '/v/',
+    name: 'Voiced Labiodental Fricative',
+    manner: 'Fricative',
+    place: 'Labiodental',
+    isVoiced: true,
+    activeArticulators: ['Upper Incisors', 'Lower Lip', 'Vocal Folds'],
+    lipShape: 'labiodental',
+    tonguePosture: 'flat',
+    velumState: 'elevated',
+    clinicalPrompt: 'Rest the upper teeth lightly on the lower lip and maintain voiced airflow.',
+    exemplarWords: ['Van', 'Seven', 'Five', 'Vase']
+  },
+  {
+    symbol: '/w/',
+    name: 'Voiced Labial Glide',
+    manner: 'Glide',
+    place: 'Bilabial',
+    isVoiced: true,
+    activeArticulators: ['Lips', 'Tongue Body', 'Vocal Folds'],
+    lipShape: 'round',
+    tonguePosture: 'flat',
+    velumState: 'elevated',
+    clinicalPrompt: 'Round the lips and glide smoothly into the following vowel.',
+    exemplarWords: ['Web', 'Water', 'Away', 'Cow']
+  },
+  {
+    symbol: '/j/',
+    name: 'Voiced Palatal Glide (Y)',
+    manner: 'Glide',
+    place: 'Palatal',
+    isVoiced: true,
+    activeArticulators: ['Tongue Body', 'Hard Palate', 'Vocal Folds'],
+    lipShape: 'spread',
+    tonguePosture: 'palatal_arch',
+    velumState: 'elevated',
+    clinicalPrompt: 'Raise the front of the tongue toward the palate and glide into the vowel.',
+    exemplarWords: ['Yellow', 'Yoyo', 'Canyon', 'Toy']
+  },
+  {
+    symbol: '/tʃ/',
+    name: 'Voiceless Postalveolar Affricate (CH)',
+    manner: 'Affricate',
+    place: 'Palatal',
+    isVoiced: false,
+    activeArticulators: ['Tongue Blade', 'Postalveolar Region'],
+    lipShape: 'round',
+    tonguePosture: 'palatal_arch',
+    velumState: 'elevated',
+    clinicalPrompt: 'Begin with a brief closure and release into a steady fricative.',
+    exemplarWords: ['Chair', 'Cheese', 'Kitchen', 'Watch']
+  },
+  {
+    symbol: '/dʒ/',
+    name: 'Voiced Postalveolar Affricate (J)',
+    manner: 'Affricate',
+    place: 'Palatal',
+    isVoiced: true,
+    activeArticulators: ['Tongue Blade', 'Postalveolar Region', 'Vocal Folds'],
+    lipShape: 'round',
+    tonguePosture: 'palatal_arch',
+    velumState: 'elevated',
+    clinicalPrompt: 'Begin with a brief closure and release into a voiced fricative.',
+    exemplarWords: ['Jam', 'Jungle', 'Magic', 'Page']
+  },
+  {
+    symbol: '/h/',
+    name: 'Voiceless Glottal Fricative',
+    manner: 'Fricative',
+    place: 'Glottal',
+    isVoiced: false,
+    activeArticulators: ['Glottis', 'Open Vocal Folds'],
+    lipShape: 'neutral',
+    tonguePosture: 'flat',
+    velumState: 'elevated',
+    clinicalPrompt: 'Allow a gentle stream of air through the open glottis into the vowel.',
+    exemplarWords: ['Hat', 'House', 'Behind', 'Hello']
+  },
+  {
     symbol: '/ʃ/',
     name: 'Voiceless Post-Alveolar Fricative (SH)',
     manner: 'Fricative',
@@ -186,6 +316,32 @@ const PHONEME_PROFILES: PhonemeAnatomyProfile[] = [
     velumState: 'elevated',
     clinicalPrompt: 'Pucker lips into a gentle trumpet shape, arch tongue blade towards hard palate ("Quiet sound").',
     exemplarWords: ['Ship', 'Shoe', 'Fish', 'Brush']
+  },
+  {
+    symbol: '/ʒ/',
+    name: 'Voiced Postalveolar Fricative (ZH)',
+    manner: 'Fricative',
+    place: 'Palatal',
+    isVoiced: true,
+    activeArticulators: ['Tongue Blade', 'Postalveolar Region', 'Vocal Folds'],
+    lipShape: 'round',
+    tonguePosture: 'palatal_arch',
+    velumState: 'elevated',
+    clinicalPrompt: 'Use a relaxed tongue arch and continuous airflow with voicing.',
+    exemplarWords: ['Measure', 'Usual', 'Beige', 'Genre']
+  },
+  {
+    symbol: '/ŋ/',
+    name: 'Voiced Velar Nasal (NG)',
+    manner: 'Nasal',
+    place: 'Velar',
+    isVoiced: true,
+    activeArticulators: ['Tongue Dorsum', 'Velum (Lowered)', 'Vocal Folds'],
+    lipShape: 'neutral',
+    tonguePosture: 'velar_back',
+    velumState: 'lowered',
+    clinicalPrompt: 'Raise the back of the tongue while voiced airflow resonates through the nose.',
+    exemplarWords: ['Sing', 'Singer', 'Ring', 'Long']
   }
 ];
 
@@ -212,7 +368,7 @@ export const ArticulatorAnatomyVisualizer: React.FC = () => {
             Articulator Anatomy Explorer
           </h1>
           <p className="text-slate-500 text-sm mt-1 max-w-xl">
-            Interactive anatomical cross-section mapping active articulatory postures, tongue placement, velopharyngeal port gating, and vocal fold voicing.
+            A simplified visual guide to tongue and lip placement, airflow, and voicing. Illustrations are approximate and are not diagnostic.
           </p>
         </div>
 
@@ -241,6 +397,9 @@ export const ArticulatorAnatomyVisualizer: React.FC = () => {
           return (
             <button
               key={p.symbol}
+              type="button"
+              aria-pressed={isSelected}
+              aria-label={`Show placement for ${p.symbol}: ${p.name}`}
               onClick={() => {
                 sfx.playPop();
                 setSelectedPhonemeIndex(idx);
@@ -281,7 +440,13 @@ export const ArticulatorAnatomyVisualizer: React.FC = () => {
           {/* SVG Sagittal Anatomical Cross-Section */}
           <div className="relative bg-slate-900 rounded-3xl p-6 flex items-center justify-center overflow-hidden min-h-[320px]">
             {/* Vocal Tract Outline SVG */}
-            <svg viewBox="0 0 400 320" className="w-full max-w-[360px] h-auto">
+            <svg
+              viewBox="0 0 400 320"
+              className="w-full max-w-[360px] h-auto"
+              role="img"
+              aria-label={`Simplified mouth placement illustration for ${currentPhoneme.symbol}, ${currentPhoneme.name}`}
+            >
+              <title>{`Simplified mouth placement for ${currentPhoneme.symbol}`}</title>
               {/* Hard Palate & Upper Jaw Outline */}
               <path
                 d="M 50 140 Q 60 110 90 90 Q 140 70 200 70 Q 240 70 270 90 L 270 120"
@@ -383,6 +548,8 @@ export const ArticulatorAnatomyVisualizer: React.FC = () => {
                     ? 'M 60 120 Q 65 135 60 150' // Bilabial contact
                     : currentPhoneme.lipShape === 'round'
                     ? 'M 50 115 Q 40 135 50 155' // Rounded protrusion
+                    : currentPhoneme.lipShape === 'spread'
+                    ? 'M 60 120 Q 72 135 60 150' // Spread lips
                     : 'M 65 115 Q 70 135 65 155' // Neutral
                 }
                 fill="none"
