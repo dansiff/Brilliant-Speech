@@ -1,0 +1,151 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user account information and premium status.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "isPremium": { "type": "boolean" },
+        "isSubscriptionActive": { "type": "boolean" },
+        "subscriptionTier": { "type": "string" },
+        "purchasedExerciseIds": { "type": "array", "items": { "type": "string" } },
+        "isAutismAddonActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "isPremium"]
+    },
+    "CustomExercise": {
+      "title": "Custom Exercise",
+      "description": "Exercises created by users/admins.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "isPublished": { "type": "boolean" },
+        "price": { "type": "number" },
+        "videoUrl": { "type": "string" },
+        "audioUrl": { "type": "string" }
+      },
+      "required": ["id", "creatorId", "title", "isPublished"]
+    },
+    "MarketplaceItem": {
+      "title": "Marketplace Item",
+      "description": "Items listed in the store.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "exercise": { "$ref": "#/entities/CustomExercise" },
+        "price": { "type": "number" },
+        "isFeatured": { "type": "boolean" },
+        "creatorName": { "type": "string" }
+      }
+    },
+    "SessionRecord": {
+      "title": "Session Record",
+      "description": "Records of speech practice sessions.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "exerciseId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "score": { "type": "number" },
+        "feedback": { "type": "string" }
+      },
+      "required": ["userId", "exerciseId", "score"]
+    },
+    "SensoryProfile": {
+      "title": "Sensory Profile",
+      "description": "UI adjustments for sensory needs.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "childProfileId": { "type": "string" },
+        "calmingColors": { "type": "boolean" },
+        "reducedMotion": { "type": "boolean" },
+        "highContrast": { "type": "boolean" },
+        "fontScale": { "type": "number" },
+        "showVisualTimer": { "type": "boolean" }
+      },
+      "required": ["id", "childProfileId"]
+    },
+    "FirstThenBoard": {
+      "title": "First/Then Board",
+      "description": "Visual schedule for tasks.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "childProfileId": { "type": "string" },
+        "firstAction": { "type": "string" },
+        "firstImage": { "type": "string" },
+        "thenAction": { "type": "string" },
+        "thenImage": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "childProfileId", "firstAction", "thenAction"]
+    },
+    "NotificationSettings": {
+      "title": "Notification Settings",
+      "description": "User preferences for notifications and reminders.",
+      "type": "object",
+      "properties": {
+        "remindersEnabled": { "type": "boolean" },
+        "practiceTime": { "type": "string" },
+        "achievementsEnabled": { "type": "boolean" },
+        "milestonesEnabled": { "type": "boolean" }
+      },
+      "required": ["remindersEnabled", "achievementsEnabled", "milestonesEnabled"]
+    },
+    "ClinicalSettings": {
+      "title": "Clinical Settings",
+      "description": "Therapeutic configuration for practice.",
+      "type": "object",
+      "properties": {
+        "promptingLevel": { "type": "string", "enum": ["maximal", "moderate", "minimal", "none"] },
+        "waitTimeSeconds": { "type": "number" },
+        "feedbackComplexity": { "type": "string", "enum": ["simple", "technical"] },
+        "focusAreas": { "type": "array", "items": { "type": "string" } },
+        "dailyPracticeTargetMinutes": { "type": "number" }
+      },
+      "required": ["promptingLevel", "waitTimeSeconds", "feedbackComplexity", "dailyPracticeTargetMinutes"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document"
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "SessionRecord",
+      "description": "Individual practice sessions"
+    },
+    "/users/{userId}/childProfiles/{childId}/sensoryProfile": {
+      "schema": "SensoryProfile",
+      "description": "Sensory settings for a child"
+    },
+    "/users/{userId}/childProfiles/{childId}/firstThenBoards/{boardId}": {
+      "schema": "FirstThenBoard",
+      "description": "Visual schedules for a child"
+    },
+    "/users/{userId}/childProfiles/{childId}/notificationSettings/{settingId}": {
+      "schema": "NotificationSettings",
+      "description": "Notification preferences"
+    },
+    "/users/{userId}/childProfiles/{childId}/clinicalSettings/{settingId}": {
+      "schema": "ClinicalSettings",
+      "description": "Clinical and therapeutic settings"
+    },
+    "/customExercises/{exerciseId}": {
+      "schema": "CustomExercise",
+      "description": "Global user-created exercises"
+    },
+    "/marketplace/{itemId}": {
+      "schema": "MarketplaceItem",
+      "description": "Available items in the marketplace"
+    }
+  }
+}

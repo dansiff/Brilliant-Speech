@@ -1,0 +1,21 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.antigravity/
+# Android project source (keep, but ignore build artifacts)
+android/app/build/
+android/app/**/*.iml
+android/build/
+android/gradle/
+android/gradle/wrapper/
+android/*.gradle
+android/*.properties
+# Android signing keys
+*.keystore
+# Asset Links (optional secret)
+public/.well-known/assetlinks.json

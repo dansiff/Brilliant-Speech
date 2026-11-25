@@ -1,0 +1,8 @@
+{
+  "firestore": {
+    "databaseId": "ai-studio-brilliantspeech-b8151fd8-f1ca-439e-a36f-a6b09a58e917",
+    "rules": "firestore.rules",
+    "edition": "ENTERPRISE",
+    "dataAccessMode": "FIRESTORE_NATIVE"
+  }
+}

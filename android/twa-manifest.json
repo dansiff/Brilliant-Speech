@@ -1,0 +1,79 @@
+{
+  "packageId": "com.bilingualandbrilliant.speechtherapy",
+  "host": "brilliant-speech.ai.studio",
+  "name": "Bilingual and Brilliant Speech Therapy",
+  "launcherName": "Speech Path",
+  "display": "standalone",
+  "themeColor": "#FFFFFF",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#F8FAFC",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://brilliant-speech.ai.studio/icon-512.png",
+  "maskableIconUrl": "https://brilliant-speech.ai.studio/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "C:\\Users\\Danie\\antigravity\\Brilliant-Speech\\android\\android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Speech Practice",
+      "shortName": "Practice",
+      "url": "https://brilliant-speech.ai.studio/?view=practice",
+      "chosenIconUrl": "https://brilliant-speech.ai.studio/icon-192.png"
+    },
+    {
+      "name": "Sound Ladder",
+      "shortName": "Sound Ladder",
+      "url": "https://brilliant-speech.ai.studio/?view=sound-ladder",
+      "chosenIconUrl": "https://brilliant-speech.ai.studio/icon-192.png"
+    },
+    {
+      "name": "Contrast Engine",
+      "shortName": "Contrast",
+      "url": "https://brilliant-speech.ai.studio/?view=contrast-engine",
+      "chosenIconUrl": "https://brilliant-speech.ai.studio/icon-192.png"
+    },
+    {
+      "name": "AAC Playground",
+      "shortName": "AAC Board",
+      "url": "https://brilliant-speech.ai.studio/?view=aac-playground",
+      "chosenIconUrl": "https://brilliant-speech.ai.studio/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://brilliant-speech.ai.studio/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "playBilling": {
+      "enabled": true
+    },
+    "locationDelegation": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://brilliant-speech.ai.studio/",
+  "minSdkVersion": 21,
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1"
+}

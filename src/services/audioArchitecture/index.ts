@@ -1,0 +1,10 @@
+export * from './types';
+export * from './PhoneticDictionary';
+export * from './AudioCapture';
+export * from './AudioProcessor';
+export * from './SpeechRecognizer';
+export * from './TranscriptNormalizer';
+export * from './DeterministicScorer';
+export * from './OptionalAiInterpreter';
+export * from './AudioPipeline';
+export { audioPipeline as audioArchitecture } from './AudioPipeline';

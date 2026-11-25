@@ -1,0 +1,56 @@
+{
+  "name": "SpeechFlow Brilliant Pediatric Speech Platform",
+  "short_name": "SpeechFlow",
+  "description": "Bilingual AI Speech Therapy, Clinical Governance, AAC & Phonology Platform",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "categories": ["education", "medical", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Speech Practice",
+      "short_name": "Practice",
+      "description": "Start daily articulation and phonology practice",
+      "url": "/?view=practice",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Sound Ladder",
+      "short_name": "Sound Ladder",
+      "description": "Isolation to sentence hierarchical articulation drill",
+      "url": "/?view=sound-ladder",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Contrast Engine",
+      "short_name": "Contrast",
+      "description": "Minimal Pairs, Maximal & Multiple Oppositions",
+      "url": "/?view=contrast-engine",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AAC Playground",
+      "short_name": "AAC Board",
+      "description": "Communication boards and scene-based AAC",
+      "url": "/?view=aac-playground",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
